@@ -1,15 +1,123 @@
 'use client';
-import {useCallback,useEffect,useRef,useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import Arena from './Arena';
 import SponsorForm from './SponsorForm';
-import {RACE_DATE,SPOTS,nextPrice,type Sponsor} from '@/lib/config';
-export default function Home(){const [sponsors,setSponsors]=useState<Sponsor[]>([]),[enabled,setEnabled]=useState(false),[error,setError]=useState(false),[loaded,setLoaded]=useState(false),[selected,setSelected]=useState(0),[panel,setPanel]=useState<'spots'|'story'|'shoes'|null>(null),[view,setView]=useState<'front'|'back'>('front'),[accent,setAccent]=useState('#df6544'),[remaining,setRemaining]=useState('— d — h — m — s');const dialog=useRef<HTMLDialogElement>(null);const reload=useCallback(()=>{fetch('/api/sponsors').then(r=>{if(!r.ok)throw new Error();return r.json() as Promise<{sponsors:Sponsor[];paymentsEnabled:boolean}>}).then(d=>{setSponsors(d.sponsors);setEnabled(d.paymentsEnabled);setError(false);setLoaded(true)}).catch(()=>{setError(true);setEnabled(false)})},[]);
-useEffect(()=>{reload();const refresh=setInterval(reload,60000);const tick=()=>{const t=Math.max(0,Math.floor((Date.parse(RACE_DATE)-Date.now())/1000));setRemaining(`${String(Math.floor(t/86400)).padStart(2,'0')} d  ${String(Math.floor(t%86400/3600)).padStart(2,'0')} h  ${String(Math.floor(t%3600/60)).padStart(2,'0')} m  ${String(t%60).padStart(2,'0')} s`)};tick();const clock=setInterval(tick,1000);if(new URLSearchParams(location.search).has('checkout'))setPanel('spots');return()=>{clearInterval(refresh);clearInterval(clock)}},[reload]);useEffect(()=>{if(panel)dialog.current?.showModal();else dialog.current?.close()},[panel]);
-const choose=(n:number)=>{setSelected(n);setView(n>=5?'back':'front');setPanel('spots')};const raised=sponsors.reduce((sum,s)=>sum+s.amount,0)/100;
-return <main className="experience" style={{'--accent':accent} as React.CSSProperties}><Arena sponsors={sponsors} selected={selected} onSelect={choose} view={view} accent={accent} onShoeSelect={()=>setPanel('shoes')}/><div className="vignette"/><div className="corner tl"/><div className="corner tr"/><div className="corner bl"/><div className="corner br"/>
-<header className="identity"><button className="title" onClick={()=>setPanel('story')}>Sponsor my slow run<span>↗</span></button><p>{loaded&&!error?<>I’m paid <b>${raised.toLocaleString()}</b> to run 21.1 km.</>:'21.1 km. One slow runner. Your logo.'}</p><div className="subline"><a href="https://timesofindia.indiatimes.com/times-events/marathon/bengaluru/2026" target="_blank" rel="noopener noreferrer">Bengaluru · 20 December ↗</a><span>·</span><button onClick={()=>setPanel('story')}>How it works?</button></div><div className="controls"><button aria-label="Change sponsor highlight color" title="Change color" onClick={()=>setAccent(accent==='#df6544'?'#b8d86a':'#df6544')}><span className="color-dot"/></button><button onClick={()=>setView(view==='front'?'back':'front')} title="Turn runner around" aria-label="Turn runner around">↻</button><button onClick={()=>{if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});else document.documentElement.requestFullscreen?.().catch(()=>{});}} aria-label="Toggle full screen" title="Full screen">⛶</button></div></header>
-<div className="countdown"><span>Race day in</span><strong>{remaining}</strong><small>TIMES INTERNET · BENGALURU</small></div>
-<div className="left-bottom"><div className="motto">Slow runner. <em>Long exposure.</em></div><span className="availability"><i/>{error?'Sponsorships temporarily unavailable':`${sponsors.length} / 9 spots claimed`} <span>·</span> From $10</span></div>
-<div className="main-action"><span className="scene-note">BENGALURU · 21.1 KM · THE START LINE</span><button className="primary" onClick={()=>setPanel('spots')}>View spots <span>↗</span></button><small>Drag to rotate · Scroll to zoom</small></div>
-<a className="creator" href="https://x.com/bhavya_gor" target="_blank" rel="noopener noreferrer"><span className="avatar"><img src="/bhavya-x-avatar.jpg" alt="Bhavya Gor" width={37} height={37}/></span><span>I’m <b>@bhavya_gor ↗</b><small>Not shredded. Just showing up.</small></span></a>
-<dialog ref={dialog} className={`panel ${panel!=='spots'?'story-panel':''}`} onCancel={()=>setPanel(null)} onClick={e=>{if(e.target===dialog.current){const r=dialog.current.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)setPanel(null)}}}><div className="panel-heading"><div><span className="eyebrow">THE HALF MARATHON PROJECT</span><h1>{panel==='shoes'?'Put your shoes on the start line.':panel==='story'?'A slow run. A shared story.':'Get on the shirt.'}</h1></div><button className="close" aria-label="Close panel" onClick={()=>setPanel(null)}>×</button></div>{panel==='shoes'?<div className="story-content"><p>Make running shoes? Send me a pair to train in and run the Bengaluru half marathon.</p><p>Let’s talk fit, training time, and race-day plans. A footwear partnership, arranged directly with me.</p><a className="primary" href="mailto:bhavya.gor9999@gmail.com?subject=Footwear%20partnership%20%E2%80%94%20Bengaluru%20half%20marathon&body=Hi%20Bhavya%2C%0A%0ABrand%3A%0AShoe%20model%3A%0AWebsite%3A%0AWhat%20we%20have%20in%20mind%3A%0A">Let’s talk shoes ↗</a><p className="fine">For footwear brands. We’ll agree on the pair and partnership before anything ships.</p></div>:panel==='story'?<div className="story-content"><p>I’m Bhavya. I run slow. On <b>December 20, 2026</b>, I’m running the <b>Times Internet Half Marathon in Bengaluru</b>—with your logo on my race kit.</p><p>No six-pack. No elite pace. Just 21.1 km of showing up. The slower I go, the longer your logo’s out there.</p><div className="benefits"><div><span>01</span><p><b>Your logo on race day.</b><br/>Your winning spot on my race tee or shorts.</p></div><div><span>02</span><p><b>A place on this site.</b><br/>Your brand, introduction, and website.</p></div><div><span>03</span><p><b>Part of the journey.</b><br/>A mention in my race recap on X.</p></div></div><p>Your support goes toward running gear, nutrition, supplements, and recovery. I’ll share the purchases and the progress along the way.</p><p className="fine">This is my personal sponsorship page. The start-line scene is illustrative; the organizer will announce the exact venue and route closer to race day. No promised audience or race time.</p><button className="primary" onClick={()=>setPanel('spots')}>Find your spot · from $10 ↗</button><a className="contact" href="https://timesofindia.indiatimes.com/times-events/marathon/bengaluru/2026" target="_blank" rel="noopener noreferrer">Official Bengaluru race details ↗</a><a className="contact" href="mailto:bhavya.gor9999@gmail.com">Talk to me ↗</a></div>:<div className="spots-content"><p className="panel-intro">Spots start at $10. The butt starts at $20. Each outbid doubles the price.</p><div className="spot-list">{SPOTS.map((name,n)=>{const s=sponsors.find(s=>s.slot===n);return <button key={name} className={`spot ${selected===n?'active':''}`} aria-pressed={selected===n} onClick={()=>{setSelected(n);setView(n>=5?'back':'front')}}><span className="spot-number">0{n+1}</span><span>{name}<small>{s?.brand||(error?'Availability unavailable':n===8?'Premium · shorts':'Open spot')}</small></span>{s?.logo&&<img src={s.logo} alt={s.brand}/>}<b>{`$${nextPrice(n,s?.amount)/100}`} <span>↗</span></b></button>})}</div><button className="shoe-partnership" onClick={()=>setPanel('shoes')}><span>Sponsor my shoes<small>Footwear brands · send a pair, join the run</small></span><span>↗</span></button><SponsorForm selected={selected} sponsors={sponsors} enabled={enabled&&!error} reload={reload}/><details id="rules"><summary>Sponsorship terms & privacy</summary><p>Eight tee spots start at $10 USD; the butt spot on the shorts starts at $20 USD, before any checkout taxes. Every outbid doubles that spot’s price: $10 → $20 → $40, or $20 → $40 → $80 for the butt. The sponsor holding the spot when bidding closes gets the race-day placement. Payment confirmation updates ownership. If outbid, your payment is refunded minus the actual Dodo payment-processing fees. Dodo refund-processing fees, if any, are covered by Bhavya. Your brand and logo become public. Upload a logo you have permission to use.</p><p>Logos lock on December 10, 2026 (India time), for printing. Placement dimensions will be confirmed before printing. If I can’t race or fulfil your shirt placement, I’ll arrange a full refund. Contact me before printing for any other change or refund request. Overlapping payments that cannot be fulfilled are submitted for refund.</p><p>Dodo Payments handles payment details. This site stores your sponsorship and logo, never your card details. Logo editing is available in your checkout browser tab; email me for access recovery or data requests. No view, click, or sales guarantees.</p><a href="mailto:bhavya.gor9999@gmail.com">bhavya.gor9999@gmail.com ↗</a></details></div>}</dialog></main>}
+import {RACE_DATE, SPOTS, nextPrice, type Sponsor} from '@/lib/config';
+
+type Panel = 'spots' | 'detail' | 'story' | 'shoes' | 'rules' | null;
+const EMAIL = 'bhavya.gor9999@gmail.com';
+const RACE_URL = 'https://timesofindia.indiatimes.com/times-events/marathon/bengaluru/2026';
+function FullscreenIcon() {
+  return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></svg>;
+}
+export default function Home() {
+  const [sponsors, setSponsors] = useState<Sponsor[]>([]), [enabled, setEnabled] = useState(false);
+  const [error, setError] = useState(false), [loaded, setLoaded] = useState(false);
+  const [selected, setSelected] = useState(0), [panel, setPanel] = useState<Panel>(null);
+  const [view, setView] = useState<'front' | 'back'>('front'), [portrait, setPortrait] = useState(false);
+  const [showSpots, setShowSpots] = useState(true), [remaining, setRemaining] = useState<number[] | null>(null);
+  const dialog = useRef<HTMLDialogElement>(null), returnFocus = useRef<HTMLElement | null>(null);
+  const reload = useCallback(() => {
+    fetch('/api/sponsors').then(r => {if (!r.ok) throw new Error(); return r.json() as Promise<{sponsors: Sponsor[]; paymentsEnabled: boolean}>;})
+      .then(data => {setSponsors(data.sponsors); setEnabled(data.paymentsEnabled); setError(false); setLoaded(true);})
+      .catch(() => {setError(true); setEnabled(false);});
+  }, []);
+  useEffect(() => {
+    reload(); const refresh = setInterval(reload, 60000);
+    const tick = () => {
+      const t = Math.max(0, Math.floor((Date.parse(RACE_DATE) - Date.now()) / 1000));
+      setRemaining([Math.floor(t / 86400), Math.floor(t % 86400 / 3600), Math.floor(t % 3600 / 60), t % 60]);
+    };
+    const initial = setTimeout(() => {tick(); if (new URLSearchParams(location.search).has('checkout')) setPanel('detail');}, 0);
+    const timer = setInterval(tick, 1000);
+    return () => {clearInterval(refresh); clearInterval(timer); clearTimeout(initial);};
+  }, [reload]);
+  const open = (next: Panel) => {
+    if (!panel) returnFocus.current = document.activeElement as HTMLElement;
+    setPanel(next);
+  };
+  const close = () => {setPanel(null); returnFocus.current?.focus();};
+  useEffect(() => {
+    const node = dialog.current;
+    if (!panel || !node) return;
+    node.scrollTop = 0;
+    node.querySelector<HTMLElement>('[data-panel-focus]')?.focus({preventScroll: true});
+  }, [panel, selected]);
+  useEffect(() => {
+    if (!panel) return;
+    const escape = (event: KeyboardEvent) => {if (event.key === 'Escape') {setPanel(null); returnFocus.current?.focus();}};
+    document.addEventListener('keydown', escape);
+    return () => document.removeEventListener('keydown', escape);
+  }, [panel]);
+  const choose = (n: number) => {setSelected(n); setView(n >= 5 ? 'back' : 'front'); setPortrait(n !== 8); setShowSpots(true); open('detail');};
+  const openCount = 9 - sponsors.length;
+  const title = panel === 'story' ? 'Slow runner. Long exposure.' : panel === 'shoes' ? 'Put your shoes on the start line.' : panel === 'rules' ? 'The small print.' : panel === 'detail' ? SPOTS[selected] : 'Choose your spot.';
+  return <main className={`experience ${panel ? 'has-panel' : ''}`}>
+    <Arena sponsors={sponsors} selected={selected} onSelect={choose} view={view} onViewChange={setView} portrait={portrait} showSpots={showSpots} panelOpen={!!panel} onShoeSelect={() => open('shoes')}/>
+    <div className="vignette"/>
+    <header className="identity hud">
+      <button className="title" onClick={() => open('story')}>Sponsor my slow run</button>
+      <p className="tagline">Slow runner. <em>Long exposure.</em></p>
+      <div className="subline"><a href={RACE_URL} target="_blank" rel="noopener noreferrer">Bengaluru · 20 December ↗</a><button onClick={() => open('story')}>How it works</button></div>
+    </header>
+    <div className="countdown hud" aria-label={remaining ? `${remaining[0]} days until race day` : 'Race day is December 20, 2026'}>
+      <span>Race day in</span><strong>{['d','h','m','s'].map((unit, i) => <span key={unit}>{remaining ? String(remaining[i]).padStart(2, '0') : '—'}<small>{unit}</small></span>)}</strong>
+    </div>
+    <div className="scene-controls hud" aria-label="3D view controls">
+      <div className="view-switch" role="group" aria-label="Runner side"><button aria-pressed={view === 'front'} title="View the front of the race kit" onClick={() => setView('front')}>Front</button><button aria-pressed={view === 'back'} title="View the back of the race kit" onClick={() => setView('back')}>Back</button></div>
+      <button className="control" aria-pressed={portrait} title={portrait ? 'Show the whole race kit' : 'See Bhavya and the tee up close'} onClick={() => setPortrait(!portrait)}>{portrait ? 'Full kit' : 'Close-up'}</button>
+      <button className="control spots-toggle" aria-pressed={showSpots} title="Show or hide all numbered sponsorship spots" onClick={() => setShowSpots(!showSpots)}>Show spots</button>
+      <button className="control fullscreen" aria-label="Toggle full screen" title="Full screen" onClick={() => {if (document.fullscreenElement) void document.exitFullscreen(); else void document.documentElement.requestFullscreen?.();}}><FullscreenIcon/></button>
+    </div>
+    <div className="main-action hud">
+      <button className="primary" onClick={() => open('spots')}>{error ? 'Explore sponsorship spots' : !loaded ? 'View spots · from $10 USD' : openCount ? `View ${openCount} open spots · from $10 USD` : 'View sponsors · take over a spot'}<span aria-hidden="true">→</span></button>
+      <small><span className="desktop-hint">Drag to rotate · Scroll to zoom</span><span className="touch-hint">Drag to rotate · Pinch to zoom</span></small>
+    </div>
+    <a className="creator hud" href="https://x.com/bhavya_gor" target="_blank" rel="noopener noreferrer" aria-label="Bhavya Gor on X, opens in a new tab"><img src="/bhavya-x-avatar.jpg" alt="" width="44" height="44"/><span>@bhavya_gor ↗</span></a>
+    {panel && <dialog open ref={dialog} className={`panel ${panel === 'spots' || panel === 'detail' ? 'spots-panel' : ''} ${panel === 'detail' ? 'detail-panel' : ''}`} aria-labelledby="panel-title" aria-modal="false">
+      <div className="panel-heading"><div><span className="eyebrow">Sponsor my slow run</span><h1 id="panel-title" tabIndex={-1} data-panel-focus>{title}</h1></div><button className="close" aria-label="Close panel" title="Close (Esc)" onClick={close}>×</button></div>
+      <div className="panel-content">
+        {panel === 'spots' && <>
+          <p className="panel-intro">Your logo on my race kit. Tee spots from $10 USD; the premium butt spot from $20. Each takeover doubles the price.</p>
+          {error && <p role="status">Live availability is unavailable. <button className="text-button" onClick={reload}>Try again</button></p>}
+          <div className="spot-list">{SPOTS.map((name,n) => {
+            const sponsor = sponsors.find(s => s.slot === n), price = nextPrice(n, sponsor?.amount) / 100;
+            return <button key={name} className="spot" aria-label={`${name}, ${sponsor ? `held by ${sponsor.brand}, next takeover` : 'open'}, $${price} USD`} onClick={() => choose(n)}>
+              <span className="spot-number">{String(n + 1).padStart(2, '0')}</span><span className="spot-name">{name}<small>{sponsor?.brand || (n === 8 ? 'Premium placement' : 'Open spot')}</small></span><b>${price}<small>USD</small></b><span className="row-arrow" aria-hidden="true">→</span>
+            </button>;
+          })}</div>
+          <section className="shoe-partnership"><h2>Footwear partnerships</h2><p>Make running shoes? Send a pair and join the run.</p><button className="secondary" onClick={() => open('shoes')}>Sponsor my shoes →</button></section>
+          <button className="text-button terms-link" onClick={() => open('rules')}>Sponsorship terms & privacy</button>
+        </>}
+        {panel === 'detail' && <>
+          <button className="text-button back-link" onClick={() => open('spots')}>← All 9 spots</button>
+          <p className="selected-note"><span>{String(selected + 1).padStart(2, '0')}</span>Highlighted on the {selected >= 5 ? 'back' : 'front'} of the kit.</p>
+          <SponsorForm key={selected} selected={selected} sponsors={sponsors} enabled={enabled && !error} reload={reload}/>
+          <button className="text-button terms-link" onClick={() => open('rules')}>Sponsorship terms & privacy</button>
+        </>}
+        {panel === 'shoes' && <>
+          <p>Make running shoes? Send me a pair to train in and run the Bengaluru half marathon.</p><p>Let’s talk fit, training time, and race-day plans. A footwear partnership, arranged directly with me.</p>
+          <a className="primary" href={`mailto:${EMAIL}?subject=Footwear%20partnership%20%E2%80%94%20Bengaluru%20half%20marathon&body=Hi%20Bhavya%2C%0A%0ABrand%3A%0AShoe%20model%3A%0AWebsite%3A%0AWhat%20we%20have%20in%20mind%3A%0A`}>Email me about shoes</a>
+          <p className="fine">For footwear brands. We’ll agree on the pair and partnership before anything ships.</p>
+        </>}
+        {panel === 'story' && <>
+          <p>I’m Bhavya. I run slow. On <b>December 20, 2026</b>, I’m running 21.1 km in Bengaluru—with your logo on my race kit.</p>
+          <p>No six-pack. No elite pace. Just showing up. The slower I go, the longer your logo’s out there.</p>
+          <ul className="benefits"><li>Your logo on my race tee or shorts.</li><li>Your brand and website on this page.</li><li>A mention in my race recap on X.</li></ul>
+          <p>Your support goes toward running gear, nutrition, supplements, and recovery. I’ll share the purchases and progress along the way.</p>
+          <button className="primary" onClick={() => open('spots')}>Find your spot · from $10 USD →</button>
+          <a className="contact" href={`mailto:${EMAIL}`}>Email me</a><button className="text-button terms-link" onClick={() => open('rules')}>Sponsorship terms & privacy</button>
+        </>}
+        {panel === 'rules' && <div id="rules">
+          <h2>The auction</h2><p>Eight tee spots start at $10 USD. The premium butt spot on the back of the shorts starts at $20 USD. Each takeover doubles that spot’s price. Any checkout taxes are shown before payment. The sponsor holding the spot when bidding closes gets the race-day placement.</p>
+          <h2>Takeovers & refunds</h2><p>If another sponsor takes over your spot, your payment is refunded minus the actual payment-processing fees charged by Dodo Payments. Any additional refund-processing fees are covered by Bhavya. This is not a full-refund auction.</p>
+          <p>Payment confirmation updates ownership. Overlapping payments that cannot be fulfilled are submitted for a full refund. If I can’t race or fulfil your placement, I’ll arrange a full refund.</p>
+          <h2>Race-day placement</h2><p>Logos lock on December 10, 2026 (India time), for printing. Placement dimensions will be confirmed before printing. Contact me before printing for any other change or refund request. Upload only logos you have permission to use.</p>
+          <h2>An independent project</h2><p>This is my personal sponsorship project, not an official race partnership. The start-line setting is illustrative. The organizer will announce the exact venue and route closer to race day. There are no guaranteed audience numbers, clicks, sales, or race times.</p>
+          <a href={RACE_URL} target="_blank" rel="noopener noreferrer">Official race information ↗</a>
+          <h2>Privacy</h2><p>Your brand and logo are public. Dodo Payments handles payment details; this site never stores your card details. Logo editing is available in your checkout browser tab. Email me for access recovery or data requests.</p><a href={`mailto:${EMAIL}`}>Email me</a>
+        </div>}
+      </div>
+    </dialog>}
+  </main>;
+}

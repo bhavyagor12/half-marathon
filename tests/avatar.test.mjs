@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
+import {MeshoptDecoder} from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import {DecalGeometry} from 'three/examples/jsm/geometries/DecalGeometry.js';
 import sharp from 'sharp';
 import {AVATAR_HEIGHT, AVATAR_GROUND, AVATAR_ANCHORS} from '../lib/avatar.mjs';
@@ -10,9 +11,9 @@ import {AVATAR_HEIGHT, AVATAR_GROUND, AVATAR_ANCHORS} from '../lib/avatar.mjs';
 const buffer = await readFile(new URL('../public/models/bhavya.glb', import.meta.url));
 const jsonLength = buffer.readUInt32LE(12);
 const document = JSON.parse(buffer.subarray(20, 20 + jsonLength));
-const loader = new GLTFLoader();
+const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 // Node has no image decoder; load real geometry and inspect textures with sharp.
-loader.register(() => ({name: 'NODE_GEOMETRY_ONLY', loadTexture: () => Promise.resolve(null)}));
+loader.register(() => ({name: 'EXT_texture_webp', loadTexture: () => Promise.resolve(null)}));
 const {scene} = await loader.parseAsync(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength), '');
 const bounds = new THREE.Box3().setFromObject(scene);
 scene.scale.multiplyScalar(AVATAR_HEIGHT / bounds.getSize(new THREE.Vector3()).y);
@@ -20,19 +21,21 @@ bounds.setFromObject(scene);
 const center = bounds.getCenter(new THREE.Vector3());
 scene.position.add(new THREE.Vector3(-center.x, AVATAR_GROUND - bounds.min.y, -center.z));
 scene.updateMatrixWorld(true);
-const image = document.images[document.textures[document.materials[0].pbrMetallicRoughness.baseColorTexture.index].source];
+const texture = document.textures[document.materials[0].pbrMetallicRoughness.baseColorTexture.index];
+const image = document.images[texture.extensions?.EXT_texture_webp?.source ?? texture.source];
 const view = document.bufferViews[image.bufferView];
 const {data, info} = await sharp(buffer.subarray(28 + jsonLength + view.byteOffset, 28 + jsonLength + view.byteOffset + view.byteLength)).raw().toBuffer({resolveWithObject: true});
 
-test('avatar is a textured volumetric GLB with embedded 4K color, within the web size budget', () => {
+test('avatar is a textured volumetric GLB with Meshopt compression and embedded 2K color, within the web size budget', () => {
   assert.equal(buffer.toString('ascii', 0, 4), 'glTF');
   assert.equal(buffer.readUInt32LE(4), 2);
   assert.equal(buffer.readUInt32LE(8), buffer.length);
-  assert.ok(buffer.length < 12_000_000);
-  assert.equal(info.width, 4096);
+  assert.ok(buffer.length < 2_000_000);
+  assert.equal(info.width, 2048);
+  assert.ok(document.extensionsRequired.includes('EXT_meshopt_compression'));
   assert.ok(document.meshes[0].primitives[0].attributes.NORMAL !== undefined);
   assert.ok(document.meshes[0].primitives[0].attributes.TEXCOORD_0 !== undefined);
-  assert.ok(new THREE.Box3().setFromObject(scene).getSize(new THREE.Vector3()).z > .4);
+  assert.ok(new THREE.Box3().setFromObject(scene).getSize(new THREE.Vector3()).z > .25);
   assert.ok(document.images.every(image => image.bufferView !== undefined && !image.uri));
 });
 

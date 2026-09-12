@@ -2,8 +2,8 @@ import type * as Three from 'three';
 
 /** An illustrative Bengaluru race start; the organizer has not announced the venue. */
 export function buildRaceStart(scene: Three.Scene, THREE: typeof Three) {
-  scene.background = new THREE.Color('#eadcc9');
-  scene.fog = new THREE.Fog('#eadcc9', 15, 70);
+  scene.background = new THREE.Color('#e9e7db');
+  scene.fog = new THREE.Fog('#e9e7db', 28, 95);
   const textures: Three.Texture[] = [];
   const road = new THREE.MeshStandardMaterial({color: '#666560', roughness: 1});
   const red = new THREE.MeshStandardMaterial({color: '#ce4935', roughness: .8});
@@ -54,9 +54,9 @@ export function buildRaceStart(scene: Three.Scene, THREE: typeof Three) {
     check.rotation.x = -Math.PI / 2; check.castShadow = false;
   }
   // Familiar event truss, readable from both sides while orbiting the runner.
-  const archZ = -3.3, archHeight = 5.25;
+  const archZ = -17, archHeight = 7.6;
   for (const side of [-1, 1]) {
-    const x = side * 2.8;
+    const x = side * 4.4;
     add(new THREE.BoxGeometry(.72, .15, 1.1), dark, x, .27, archZ);
     for (const dx of [-.18, .18]) for (const dz of [-.18, .18]) bar([x + dx, .35, archZ + dz], [x + dx, archHeight, archZ + dz], .035);
     for (let y = .5; y < archHeight - .4; y += .55) {
@@ -67,17 +67,17 @@ export function buildRaceStart(scene: Three.Scene, THREE: typeof Three) {
     const upright = add(new THREE.PlaneGeometry(.40, 1.85), sign(.40, 1.85, '#ce4935', [{text:'2',y:.25,size:700},{text:'1',y:.49,size:700},{text:'K',y:.73,size:650}]), x, 1.56, archZ + .289);
     upright.castShadow = false;
   }
-  add(new THREE.BoxGeometry(6.25, .88, .42), red, 0, archHeight, archZ);
-  const event = sign(6.15, .83, '#ce4935', [{text:'TIMES INTERNET HALF MARATHON',y:.34,size:60},{text:'BENGALURU 2026   /   START',y:.76,size:54}]);
+  add(new THREE.BoxGeometry(9.5, .88, .42), red, 0, archHeight, archZ);
+  const event = sign(9.4, .83, '#ce4935', [{text:'BENGALURU HALF · 21.1K',y:.34,size:60},{text:'20 DECEMBER 2026   /   START',y:.76,size:54}]);
   for (const side of [-1, 1]) {
-    const banner = add(new THREE.PlaneGeometry(6.15, .83), event, 0, archHeight, archZ + side * .216);
+    const banner = add(new THREE.PlaneGeometry(9.4, .83), event, 0, archHeight, archZ + side * .216);
     if (side === -1) banner.rotation.y = Math.PI;
     banner.castShadow = false;
   }
   // Crowd barriers and printed cloth create depth without distracting from the sponsor kit.
-  const cloth = sign(2.15, .58, '#f5f0e4', [{text:'BENGALURU',y:.35,size:155,color:'#ce4935'},{text:'21.1 KM  /  EVERY STEP COUNTS',y:.75,size:58,color:'#435045'}]);
-  for (const side of [-1, 1]) for (let n = 0; n < 7; n++) {
-    const x = side * 2.48, z = 4.3 - n * 2.5;
+  const cloth = sign(2.15, .58, '#f5f0e4', [{text:'21.1 KM',y:.35,size:155,color:'#ce4935'},{text:'EVERY STEP COUNTS',y:.75,size:58,color:'#435045'}]);
+  for (const side of [-1, 1]) for (let n = 0; n < 4; n++) {
+    const x = side * 2.48, z = 1.5 - n * 3.5;
     for (const offset of [-1.12, 1.12]) {bar([x,.23,z+offset],[x,1.02,z+offset]);bar([x-.20,.23,z+offset],[x+.20,.23,z+offset]);}
     bar([x,1.02,z-1.12],[x,1.02,z+1.12]);
     const banner = add(new THREE.PlaneGeometry(2.15, .58), cloth, x - side * .02, .68, z); banner.rotation.y = side === 1 ? -Math.PI / 2 : Math.PI / 2;
@@ -85,32 +85,32 @@ export function buildRaceStart(scene: Three.Scene, THREE: typeof Three) {
   }
   // Course cones and flags, clear even at the small mobile camera scale.
   for (const side of [-1, 1]) {
-    for (let n = 0; n < 4; n++) {
+    for (let n = 0; n < 2; n++) {
       const x = side * 2.12, z = 2.8 - n * 3.2;
       add(new THREE.BoxGeometry(.24,.045,.24), dark, x,.24,z);
       add(new THREE.ConeGeometry(.10,.37,12),red,x,.44,z);
       add(new THREE.CylinderGeometry(.047,.065,.07,12),white,x,.45,z);
     }
-    for (let n = 0; n < 3; n++) {
-      const x = side * (3.9 + n*.15), z = -5 - n*7;
+    for (let n = 0; n < 1; n++) {
+      const x = side * (3.9 + n*.15), z = -8 - n*7;
       bar([x,.2,z],[x,3.8,z],.026);
       const flag = add(new THREE.PlaneGeometry(.8,2.4), sign(.8,2.4,'#ce4935',[{text:'2',y:.25,size:650},{text:'1',y:.48,size:650},{text:'K',y:.74,size:580}]),x+side*.42,2.45,z); flag.rotation.y=side*.2;
     }
   }
   // Instanced avenue trees keep the environment inexpensive on phones.
-  const treeCount=34;
+  const treeCount=16;
   const trunks=new THREE.InstancedMesh(new THREE.CylinderGeometry(.13,.19,3.7,7),new THREE.MeshStandardMaterial({color:'#7e7261',roughness:1}),treeCount);
-  const crowns=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,1),new THREE.MeshStandardMaterial({color:'#7c8a67',roughness:1}),treeCount*2);
+  const crowns=new THREE.InstancedMesh(new THREE.SphereGeometry(1,16,12),new THREE.MeshStandardMaterial({color:'#7c8a67',roughness:1}),treeCount*2);
   const transform=new THREE.Object3D();
   for(let n=0;n<treeCount;n++){
-    const side=n%2?1:-1, index=Math.floor(n/2), x=side*(9+Math.sin(n*2.4)*.7),z=-12-index*5.0;
+    const side=n%2?1:-1, index=Math.floor(n/2), x=side*(9+Math.sin(n*2.4)*.7),z=-18-index*7.0;
     transform.position.set(x,2,z);transform.scale.set(1,1,1);transform.rotation.set(0,0,0);transform.updateMatrix();trunks.setMatrixAt(n,transform.matrix);
     for(let layer=0;layer<2;layer++){transform.position.set(x+Math.sin(n)*.5,4.5+layer*.8,z);transform.scale.set(2.2+Math.sin(n)*.4,1.8,2.3);transform.rotation.set(n*.3,n,.2);transform.updateMatrix();crowns.setMatrixAt(n*2+layer,transform.matrix);}
   }
   trunks.castShadow=true;crowns.castShadow=true;trunks.receiveShadow=true;crowns.receiveShadow=true;scene.add(trunks,crowns);
   // Distant city silhouettes suggest the city without inventing the race venue.
   const buildings=new THREE.MeshStandardMaterial({color:'#c4c2b4',roughness:1});
-  for(let n=0;n<12;n++){const side=n%2?1:-1;add(new THREE.BoxGeometry(3,5+n%4*2,3),buildings,side*(10+n%3*4),2.5+n%4,-28-Math.floor(n/2)*5);}
+  for(let n=0;n<6;n++){const side=n%2?1:-1;add(new THREE.BoxGeometry(3,5+n%4*2,3),buildings,side*(10+n%3*4),2.5+n%4,-28-Math.floor(n/2)*5);}
   const sun=add(new THREE.SphereGeometry(2.2,24,16),new THREE.MeshBasicMaterial({color:'#ffe6b5',fog:false}),-18,15,-47);sun.castShadow=false;
   return () => textures.forEach(texture => texture.dispose());
 }

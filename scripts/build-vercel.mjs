@@ -4,7 +4,7 @@ const stage=new URL('../.vercel-next/',import.meta.url);
 await rm(stage,{recursive:true,force:true});
 await mkdir(new URL('app/api/[...path]/',stage),{recursive:true});
 await mkdir(new URL('lib/',stage),{recursive:true});
-for(const file of ['page.tsx','layout.tsx','globals.css','Arena.tsx','SponsorForm.tsx'])await cp(new URL(`../app/${file}`,import.meta.url),new URL(`app/${file}`,stage));
+for(const file of ['page.tsx','layout.tsx','globals.css','Arena.tsx','RaceStart.ts','SponsorForm.tsx'])await cp(new URL(`../app/${file}`,import.meta.url),new URL(`app/${file}`,stage));
 await cp(new URL('../lib/config.ts',import.meta.url),new URL('lib/config.ts',stage));
 await cp(new URL('../lib/avatar.mjs',import.meta.url),new URL('lib/avatar.mjs',stage));
 await cp(new URL('../vercel-adapter/route.ts',import.meta.url),new URL('app/api/[...path]/route.ts',stage));

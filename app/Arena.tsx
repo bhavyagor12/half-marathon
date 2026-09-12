@@ -1,6 +1,7 @@
 'use client';
 import {useEffect, useRef, useState} from 'react';
 import type {Sponsor} from '@/lib/config';
+import {buildRaceStart} from './RaceStart';
 import {AVATAR_HEIGHT, AVATAR_GROUND, AVATAR_ANCHORS} from '@/lib/avatar.mjs';
 import type {Mesh, Texture, Material, Object3D} from 'three';
 
@@ -47,7 +48,7 @@ export default function Arena(props: Props) {
         scene.background = new THREE.Color('#100908');
         scene.fog = new THREE.FogExp2('#100908', .035);
         const camera = new THREE.PerspectiveCamera(35, host.clientWidth / Math.max(1, host.clientHeight), .1, 100);
-        const distance = () => host.clientWidth < 640 ? 10.8 : 9.4;
+        const distance = () => host.clientWidth < 640 ? 12.5 : 9.4;
         camera.position.set(0, 2.7, latest.current.view === 'back' ? -distance() : distance());
         const renderer = new THREE.WebGLRenderer({antialias: true});
         cleanup = () => { dispose(scene); renderer.dispose(); renderer.domElement.remove(); };
@@ -68,21 +69,19 @@ export default function Arena(props: Props) {
         controls.maxDistance = 13;
         controls.minPolarAngle = .7;
         controls.maxPolarAngle = 1.8;
-        scene.add(new THREE.HemisphereLight('#fff3e6', '#514044', 1.5));
-        const key = new THREE.DirectionalLight('#fff3e8', 2.5);
+        scene.add(new THREE.HemisphereLight('#fff3df', '#8e947c', 2.5));
+        const key = new THREE.DirectionalLight('#ffedcb', 3);
         key.position.set(-3, 7, 5);
         key.castShadow = true;
         key.shadow.mapSize.set(1024, 1024);
         key.shadow.normalBias = .015;
         scene.add(key);
-        const rim = new THREE.PointLight(latest.current.accent, 20, 14);
+        const rim = new THREE.PointLight('#ffd6a0', .5, 14);
         rim.position.set(2, 3, -2);
         scene.add(rim);
-        const fill = new THREE.PointLight('#dce2ff', 10, 12);
+        const fill = new THREE.PointLight('#dce9ed', 2, 12);
         fill.position.set(-3, 3, -4);
         scene.add(fill);
-        const accentMaterial = new THREE.MeshBasicMaterial({color: latest.current.accent});
-        const dark = new THREE.MeshStandardMaterial({color: '#191719', roughness: .6, metalness: .4});
         function mesh(geometry: import('three').BufferGeometry, material: Material, x: number, y: number, z: number, parent: Object3D = scene) {
           const result = new THREE.Mesh(geometry, material);
           result.position.set(x, y, z);
@@ -109,22 +108,7 @@ export default function Arena(props: Props) {
             body.push(object);
           }
         });
-        mesh(new THREE.CylinderGeometry(1.38, 1.55, .18, 6), dark, 0, .08, 0);
-        const ring = mesh(new THREE.TorusGeometry(1.35, .015, 8, 6), accentMaterial, 0, .177, 0);
-        ring.rotation.x = -Math.PI / 2;
-        const floor = mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({color: '#110e0d', roughness: .65, metalness: .25}), 0, -.025, 0);
-        floor.rotation.x = -Math.PI / 2;
-        floor.castShadow = false;
-        const grid = new THREE.GridHelper(100, 100, '#60221b', '#2c1511');
-        grid.position.y = -.02;
-        scene.add(grid);
-        for (const [x, z, height] of [[-2, -1.8, 4.4], [0, -2.5, 5.1], [2, -1.8, 4.4]]) {
-          const pillar = new THREE.Group();
-          pillar.position.set(x, 0, z);
-          mesh(new THREE.BoxGeometry(.20, height, .24), dark, 0, height / 2, 0, pillar).rotation.z = -.18;
-          for (const side of [-1, 1]) mesh(new THREE.BoxGeometry(.016, height + .03, .016), accentMaterial, side * .11, height / 2, .13, pillar).rotation.z = -.18;
-          scene.add(pillar);
-        }
+        const disposeEnvironment = buildRaceStart(scene, THREE);
         // Feet-relative anchors calibrated to the generated race kit. Project onto
         // actual geometry so fabric folds carry the labels during a full orbit.
         const patches: Mesh[] = [];
@@ -217,8 +201,6 @@ export default function Arena(props: Props) {
           const nextSignature = JSON.stringify([state.sponsors, state.selected, state.accent]);
           if (nextSignature !== signature) {
             signature = nextSignature;
-            accentMaterial.color.set(state.accent);
-            rim.color.set(state.accent);
             updatePatches();
           }
           if (oldView !== state.view) {
@@ -236,8 +218,7 @@ export default function Arena(props: Props) {
           renderer.domElement.removeEventListener('pointerup', click);
           dispose(scene);
           slots.forEach(slot => slot.texture.dispose());
-          grid.geometry.dispose();
-          for (const material of Array.isArray(grid.material) ? grid.material : [grid.material]) material.dispose();
+          disposeEnvironment();
           renderer.dispose();
           renderer.domElement.remove();
         };

@@ -2,6 +2,7 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import Arena from './Arena';
 import KitDiagram from './KitDiagram';
+import MusicToggle from './MusicToggle';
 import SponsorForm from './SponsorForm';
 import {RACE_DATE, SPOTS, nextPrice, type Sponsor} from '@/lib/config';
 
@@ -84,6 +85,7 @@ export default function Home() {
       <div className="segmented" role="group" aria-label="Runner side"><button aria-pressed={view === 'front'} title="View the front of the race kit" onClick={() => reframe(() => setView('front'))}>Front</button><button aria-pressed={view === 'back'} title="View the back of the race kit" onClick={() => reframe(() => setView('back'))}>Back</button></div>
       <div className="segmented" role="group" aria-label="Camera distance"><button aria-pressed={!closeUp} title="Show the whole race kit" onClick={() => reframe(() => setCloseUp(false))}>Full kit</button><button aria-pressed={closeUp} title="See Bhavya and the tee up close" onClick={() => reframe(() => setCloseUp(true))}>Close-up</button></div>
       <button className="switch" role="switch" aria-checked={showSpots} title="Show or hide the numbered sponsorship spots" onClick={() => setShowSpots(!showSpots)}><span className="switch-track" aria-hidden="true"/>Spots</button>
+      <MusicToggle/>
       <button className="control fullscreen" aria-label="Toggle full screen" title="Full screen" onClick={() => {if (document.fullscreenElement) void document.exitFullscreen(); else void document.documentElement.requestFullscreen?.();}}><FullscreenIcon/></button>
     </div>
     <div className="main-action hud">

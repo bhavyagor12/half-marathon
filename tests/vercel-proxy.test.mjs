@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import ts from 'typescript';
+const source=readFileSync(new URL('../vercel-adapter/route.ts',import.meta.url),'utf8');
+const js=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+const {POST,GET}=await import(`data:text/javascript;base64,${Buffer.from(js).toString('base64')}`);
+const context=path=>({params:Promise.resolve({path:path.split('/')})});
+test('Vercel proxy rejects arbitrary destinations and cross-site writes',async()=>{assert.equal((await GET(new Request('https://example.com/api/unknown'),context('unknown'))).status,404);assert.equal((await POST(new Request('https://example.com/api/checkout',{method:'POST',headers:{origin:'https://evil.example'}}),context('checkout'))).status,403);});
+test('Vercel proxy caps uploads before contacting the backend',async()=>{const r=await POST(new Request('https://example.com/api/branding',{method:'POST',headers:{origin:'https://example.com'},body:new Uint8Array(2*1024*1024+1)}),context('branding'));assert.equal(r.status,413);});
+test('Vercel proxy preserves authorization and rewrites only the validated origin',async()=>{const original=globalThis.fetch;globalThis.fetch=async(url,init)=>{assert.equal(url,'https://slow-club-bhavya.bhavya-gor.chatgpt.site/api/checkout');assert.equal(init.headers.get('origin'),'https://slow-club-bhavya.bhavya-gor.chatgpt.site');assert.equal(init.headers.get('authorization'),'Bearer browser-capability');assert.equal(init.redirect,'manual');return Response.json({error:'Checkout opens soon.'},{status:503});};try{const result=await POST(new Request('https://example.com/api/checkout',{method:'POST',headers:{origin:'https://example.com',authorization:'Bearer browser-capability'},body:'{}'}),context('checkout'));assert.equal(result.status,503);assert.equal(result.headers.get('x-content-type-options'),'nosniff');}finally{globalThis.fetch=original;}});

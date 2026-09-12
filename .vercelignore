@@ -1,0 +1,9 @@
+.git
+node_modules
+.wrangler
+dist
+.vercel-next
+.env*
+!.env.example
+*.tsbuildinfo
+output

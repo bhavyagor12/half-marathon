@@ -41,3 +41,11 @@ The mannequin is an original procedural Three.js placeholder, not Bhavya’s lik
 `public/og.png` is the unused share card from the rejected editorial layout, generated with the built-in imagegen tool. It is intentionally not referenced in metadata. Prompt: premium off-white/olive/lime social card, “SLOW CLUB 21.1”, “I run slow. Your logo gets more airtime.”, “BHAVYA · 20 DECEMBER 2026”, and a floating tee with “YOUR LOGO HERE”. Replace with an arena-matched card later.
 
 Contact: https://x.com/bhavya_gor · bhavya.gor9999@gmail.com.
+
+## Vercel deployment
+
+GitHub: https://github.com/bhavyagor12/half-marathon (branch `main`). Vercel project: `half-marathon` in `bhavyagor12s-projects`, connected to that GitHub repository.
+
+`npm run build:vercel` creates an ignored `.vercel-next` app from the shared frontend and builds native Next.js for Vercel. `vercel.json` selects that output. This preserves the existing Cloudflare build for backend maintenance without duplicating product UI source.
+
+The Vercel API adapter forwards only the known sponsorship routes to the original Sites Worker, where D1, R2, webhook verification, bids, and refunds remain authoritative. It enforces same-origin writes, bounded bodies, timeout, and an explicit route allowlist. It is not a general-purpose proxy. Consequently, the Sites backend must remain deployed and publicly reachable. Do not delete it after the Vercel launch. Checkout remains disabled until the activation steps above are completed; set the backend's `SITE_URL` to the Vercel production domain before enabling payments.

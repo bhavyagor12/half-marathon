@@ -1,0 +1,2 @@
+import {authorized,db,error} from '@/lib/server';
+export async function GET(req:Request){try{const order=await authorized(req);if(!order)return error('No sponsorship found for this browser.',401);const refund=order.payment?await db().prepare('SELECT status,amount,fee FROM refund_jobs WHERE payment=?').bind(order.payment).first():null;return Response.json({status:order.status,brand:order.brand,slot:order.slot,logo:order.logo,refund},{headers:{'Cache-Control':'no-store'}});}catch{return error('Unable to check payment status.',503);}}

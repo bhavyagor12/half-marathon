@@ -1,0 +1,2 @@
+import {db,ready,settings} from '@/lib/server';
+export async function GET(){try{const {results}=await db().prepare("SELECT o.slot,o.brand,o.tagline,o.website,o.logo,o.amount,s.version FROM orders o JOIN slots s ON s.owner_id=o.id WHERE o.status='paid' ORDER BY o.slot").all();return Response.json({sponsors:results,paymentsEnabled:ready(),contact:settings().SPONSOR_CONTACT||null},{headers:{'Cache-Control':'no-store'}});}catch{return Response.json({error:'Sponsor details are temporarily unavailable.'},{status:503});}}

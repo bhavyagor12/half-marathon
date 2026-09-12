@@ -1,0 +1,24 @@
+{
+  "status": "SUCCEEDED",
+  "inputSha256": "518c4f24fe064e7d023ef20088d35a02eb6ab0793d5c8249bba74cc20aa423f4",
+  "parameters": {
+    "ai_model": "meshy-7",
+    "model_type": "standard",
+    "ultra_mode": true,
+    "should_texture": true,
+    "enable_pbr": true,
+    "texture_resolution": "4k",
+    "should_remesh": true,
+    "target_polycount": 100000,
+    "topology": "triangle",
+    "save_pre_remeshed_model": true,
+    "image_enhancement": false,
+    "target_formats": [
+      "glb"
+    ],
+    "multi_view_thumbnails": true
+  },
+  "id": "01a095d4-9609-767e-b540-e29bc00c747f",
+  "progress": 100,
+  "consumedCredits": 35
+}

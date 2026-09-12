@@ -1,6 +1,6 @@
 # Sponsor my slow run
 
-Bhavya Gor’s December 20, 2026 half-marathon sponsorship auction. One full-screen Three.js arena, a race-kit mannequin, a spots drawer, and a short story dialog.
+Bhavya Gor’s December 20, 2026 half-marathon sponsorship auction. One full-screen Three.js arena, a textured 360° model of Bhavya in his race kit, a spots drawer, and a short story dialog.
 
 ## Run
 
@@ -36,7 +36,11 @@ The fee lookup and refund math follow the official [balance ledger](https://docs
 
 ## Assets and follow-up
 
-The mannequin is an original procedural Three.js placeholder, not Bhavya’s likeness. Await Bhavya’s own photo for a 3D-style portrait; a true view-independent mesh requires additional modeling/scan work. The supplied reference screenshot is the target for the minimal arena layout, not a portrait of Bhavya.
+The runner is a real textured GLB at `public/models/bhavya.glb`, generated with Meshy 7 Ultra from the race-kit likeness reference derived from Bhavya’s five supplied photos. It supports full orbit, front/back selection, and nine surface-projected sponsor decals. This is an AI reconstruction; facial/profile/back accuracy is not scan-verified.
+
+The production asset is about 10.7 MB with 102,339 triangles and a 4K color texture. `scripts/optimize-avatar.mjs` compresses embedded textures without changing geometry. `lib/avatar.mjs` contains the calibrated garment anchors. `tests/avatar.test.mjs` loads the actual GLB, checks volume/textures/size, verifies that all nine anchors hit the right garment colors, and validates decal geometry and rear occlusion.
+
+Generation source, high-detail master and four provider-rendered views remain in `output/avatar/`, excluded from deployment. `scripts/generate-avatar.mjs` uses local-only `MESHY_API_KEY`; never add that key to frontend or hosting settings. The completed task used 35 credits. Its persisted task record prevents accidental duplicate submissions; `status` and `download` resume the existing job.
 
 `public/og.png` is the unused share card from the rejected editorial layout, generated with the built-in imagegen tool. It is intentionally not referenced in metadata. Prompt: premium off-white/olive/lime social card, “SLOW CLUB 21.1”, “I run slow. Your logo gets more airtime.”, “BHAVYA · 20 DECEMBER 2026”, and a floating tee with “YOUR LOGO HERE”. Replace with an arena-matched card later.
 

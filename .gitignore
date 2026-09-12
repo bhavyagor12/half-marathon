@@ -44,3 +44,6 @@ yarn-error.log*
 
 # Local full-resolution avatar masters; optimized GLB is in public/models.
 /output/avatar/*.glb
+
+# Private original face references and intermediate head reconstruction
+/output/avatar/head-v2/

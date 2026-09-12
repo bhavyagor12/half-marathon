@@ -31,7 +31,7 @@ export default function MusicToggle({enabled}: {enabled: boolean}) {
   const player = useRef<Player | null>(null), wanted = useRef(true);
   useEffect(() => {
     if (!enabled) return;
-    let cancelled = false, host: HTMLDivElement | null = null;
+    let cancelled = false, host: HTMLDivElement | null = null, created: Player | null = null;
     try {wanted.current = localStorage.getItem(PREFERENCE) !== 'off';} catch {/* Storage may be blocked; keep music on. */}
     const sync = setTimeout(() => setOn(wanted.current), 0);
     const unlock = () => {if (wanted.current) player.current?.playVideo();};
@@ -46,18 +46,20 @@ export default function MusicToggle({enabled}: {enabled: boolean}) {
         // The iframe lives outside the React tree so hiding the rail (e.g. while a panel is open) never interrupts playback.
         host = document.createElement('div'); host.className = 'music-player'; host.setAttribute('aria-hidden', 'true');
         const mount = document.createElement('div'); host.appendChild(mount); document.body.appendChild(host);
-        player.current = new window.YT!.Player(mount, {
+        // The YouTube object exists immediately, but its player methods only appear once onReady fires,
+        // so player.current stays null until then and early taps are simply ignored.
+        created = new window.YT!.Player(mount, {
           host: 'https://www.youtube-nocookie.com', videoId: VIDEO_ID, width: 200, height: 200,
           playerVars: {autoplay: wanted.current ? 1 : 0, loop: 1, playlist: VIDEO_ID, controls: 0, playsinline: 1, rel: 0},
           events: {
-            onReady: ({target}) => {target.setVolume(55); if (wanted.current) target.playVideo();},
+            onReady: ({target}) => {if (cancelled) return; player.current = target; target.setVolume(55); if (wanted.current) target.playVideo();},
             onStateChange: ({data}) => {if (data === PLAYING) stopListening();},
             onError: () => setFailed(true),
           },
         });
       } catch {if (!cancelled) setFailed(true);}
     }, 1200);
-    return () => {cancelled = true; clearTimeout(sync); clearTimeout(start); stopListening(); player.current?.destroy(); player.current = null; host?.remove();};
+    return () => {cancelled = true; clearTimeout(sync); clearTimeout(start); stopListening(); if (typeof created?.destroy === 'function') created.destroy(); player.current = null; host?.remove();};
   }, [enabled]);
   const toggle = () => {
     const next = !wanted.current;

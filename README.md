@@ -8,7 +8,7 @@ Node 22.23+ and npm. `npm ci`, then `npm run dev`. `npm run build` emits the Clo
 
 ## Auction contract
 
-- Eight spots (chest, left/right chest, both forearms, upper/lower back, left quad) open at $10; the butt placement on the back of the shorts opens at $20.
+- Opening bids are sized by area and visibility: front chest and upper back $15; left/right chest, lower back and each quad $10; each forearm $5; the butt placement on the back of the shorts is the premium spot at $20. The Dodo product's pay-what-you-want minimum must stay at or below the cheapest opening bid ($5).
 - Each accepted takeover doubles the price for that spot. Prices are integer USD cents, calculated on the server from the current owner.
 - Version checks and atomic 30-minute reservations prevent stale or parallel checkouts from replacing the wrong sponsor.
 - A signed webhook plus canonical Dodo payment retrieval confirms the currency, product, quantity, price excluding tax, and order identity before ownership changes.
@@ -36,9 +36,9 @@ The fee lookup and refund math follow the official [balance ledger](https://docs
 
 ## Assets and follow-up
 
-The runner is a real textured GLB at `public/models/bhavya.glb`, generated with Meshy 7 Ultra from the race-kit likeness reference derived from Bhavya’s five supplied photos. It supports full orbit, front/back selection, and nine surface-projected sponsor decals. This is an AI reconstruction; facial/profile/back accuracy is not scan-verified.
+The website uses the original textured Meshy avatar at `public/models/bhavya.glb` (about 1.7 MB, Meshopt compression and 2K textures), restored at the user's request after comparing the newer head reconstruction. It supports full orbit and ten surface-projected sponsor decals. The shadow/orbit fix and both quad spots remain enabled.
 
-The production asset is about 10.7 MB with 102,339 triangles and a 4K color texture. `scripts/optimize-avatar.mjs` compresses embedded textures without changing geometry. `lib/avatar.mjs` contains the calibrated garment anchors. `tests/avatar.test.mjs` loads the actual GLB, checks volume/textures/size, verifies that all nine anchors hit the right garment colors, and validates decal geometry and rear occlusion.
+The rejected head revision remains privately under `output/avatar/head-v2/` for reference; do not promote it again without a new user request. `tests/avatar.test.mjs` checks the active GLB and all ten decal hits.
 
 Generation source, high-detail master and four provider-rendered views remain in `output/avatar/`, excluded from deployment. `scripts/generate-avatar.mjs` uses local-only `MESHY_API_KEY`; never add that key to frontend or hosting settings. The completed task used 35 credits. Its persisted task record prevents accidental duplicate submissions; `status` and `download` resume the existing job.
 
@@ -59,3 +59,5 @@ The Vercel API adapter forwards only the known sponsorship routes to the origina
 The scene represents an illustrative race-morning start corral for the Times Internet Half Marathon, Bengaluru, December 20, 2026. The official event page has not yet published the exact start venue, reporting time, or route. `app/RaceStart.ts` builds an original 3D asphalt avenue, truss start arch, timing mat, barriers, cones, flags, and instanced trees. Signage is original canvas typography naming the event; it is not a replica of a confirmed venue or an organizer endorsement. The story dialog links the official event and states that the setting is illustrative.
 
 Source: https://timesofindia.indiatimes.com/times-events/marathon/bengaluru/2026 (checked September 12, 2026). Update venue-specific details only after the organizer announces them.
+
+The other quad is slot ID 9 (displayed as spot 10), priced at $10 USD. Apply migrations `20260912010000_expand_spot_ids.sql` and `20260912010100_seed_right_quad.sql` before deploying this addition. Existing IDs and owners are preserved. The camera orbits a fixed road and sun so the scene and cast shadows remain consistent.

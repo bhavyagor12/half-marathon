@@ -50,7 +50,7 @@ export default function Arena(props: Props) {
           textures.forEach(texture => texture.dispose()); materials.forEach(material => material.dispose());
         };
         // Fetch explicitly so download progress and cancellation work before GLB decoding.
-        const response = await fetch('/models/bhavya.glb', {signal: abort.signal});
+        const response = await fetch('/models/bhavya.glb?v=original-restored', {signal: abort.signal});
         if (!response.ok) throw new Error('Avatar download failed');
         const reader = response.body?.getReader();
         const chunks: Uint8Array[] = []; let bytes = 0;
@@ -146,7 +146,7 @@ export default function Arena(props: Props) {
         const draw = () => {
           const state = latest.current;
           patches.forEach((patch, n) => {patch.visible = state.showSpots || state.sponsors.some(s => s.slot === n) || (state.panelOpen && n === state.selected);});
-          environment.rotation.y = Math.atan2(camera.position.x, camera.position.z);
+          // Keep the road and sun fixed in world space as the camera orbits the runner.
           faceLight.position.copy(camera.position).add(new THREE.Vector3(0, 1, 0)); faceLight.target.position.set(0, 2.4, 0);
           renderer.render(scene, camera);
         };

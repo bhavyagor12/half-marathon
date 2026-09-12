@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {readFileSync, readdirSync} from 'node:fs';
 import {PGlite} from '@electric-sql/pglite';
 import ts from 'typescript';
 
 // Run the real Supabase migration in an in-memory Postgres and exercise its auction functions directly.
-const migration=readFileSync(new URL('../supabase/migrations/20260912000000_slowrun_auction.sql',import.meta.url),'utf8');
+const migration=readdirSync(new URL('../supabase/migrations/',import.meta.url)).filter(name=>name.endsWith('.sql')).sort().map(name=>readFileSync(new URL('../supabase/migrations/'+name,import.meta.url),'utf8')).join('\n');
 // Supabase provides these roles and the storage schema; recreate the minimum so the migration runs unchanged.
 const SUPABASE_STUBS='create role anon; create role authenticated; create role service_role; create schema storage; create table storage.buckets (id text primary key, name text, public boolean, file_size_limit bigint, allowed_mime_types text[]);';
 async function setup(){const db=new PGlite();await db.exec(SUPABASE_STUBS);await db.exec(migration);return db;}
@@ -34,6 +34,8 @@ test('the public anon role cannot read or write auction tables',async()=>{const 
 async function sourceModule(path){const js=ts.transpileModule(readFileSync(new URL(path,import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext}}).outputText;return import(`data:text/javascript;base64,${Buffer.from(js).toString('base64')}`);}
 const {nextPrice}=await sourceModule('../lib/config.ts');
 const {refundAfterFees}=await sourceModule('../lib/refund-math.ts');
-test('regular spots open at $10, butt at $20, and both double',()=>{for(let n=0;n<8;n++)assert.equal(nextPrice(n),1000);assert.equal(nextPrice(8),2000);assert.equal(nextPrice(0,1000),2000);assert.equal(nextPrice(8,2000),4000);assert.equal(nextPrice(8,4000),8000);});
+test('spots open between $5 and $20 by size, the butt is the most expensive, and every takeover doubles',()=>{assert.deepEqual([0,1,2,3,4,5,6,7,8,9].map(n=>nextPrice(n)),[1500,1000,1000,500,500,1500,1000,1000,2000,1000]);const opening=[0,1,2,3,4,5,6,7].map(n=>nextPrice(n));assert.ok(Math.min(...opening)>=500&&Math.max(...opening)<nextPrice(8));assert.equal(nextPrice(3,500),1000);assert.equal(nextPrice(8,2000),4000);assert.equal(nextPrice(8,4000),8000);});
 test('refund uses actual USD fees, includes original tax in refund base, and nets fee credits',()=>{assert.deepEqual(refundAfterFees(1180,'pay_a',[{amount:85,is_credit:false,currency:'USD',reference_object_id:'pay_a'},{amount:10,is_credit:true,currency:'USD',reference_object_id:'pay_a'}]),{amount:1105,fee:75});});
 test('missing, mismatched, and impossible fees cannot produce a guessed refund',()=>{assert.throws(()=>refundAfterFees(1000,'pay_a',[]));for(const extra of [{currency:'INR'},{reference_object_id:'pay_other'},{amount:1001},{amount:5,is_credit:true}])assert.throws(()=>refundAfterFees(1000,'pay_a',[{amount:85,is_credit:false,currency:'USD',reference_object_id:'pay_a',...extra}]));});
+
+test('the other quad is reservable without renumbering existing spots',async()=>{const db=await setup();assert.equal((await row(db,'select count(*)::int n from slowrun_slots')).n,10);assert.equal(await reserve(db,'quad',0,{slot:9,amount:nextPrice(9)}),'reserved');assert.equal(await award(db,'quad','pay_quad'),'paid');assert.equal((await row(db,'select owner_id from slowrun_slots where id=9')).owner_id,'quad');assert.equal((await row(db,'select owner_id from slowrun_slots where id=8')).owner_id,null);await db.close();});

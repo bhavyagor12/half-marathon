@@ -10,7 +10,7 @@ import {promisify} from 'node:util';
 import sharp from 'sharp';
 
 const run = promisify(execFile);
-const origin = process.argv[2] ?? 'http://localhost:3001';
+const origin = process.argv.slice(2).find(arg => !arg.startsWith('--')) ?? 'http://localhost:3001';
 const chrome = process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 // fileURLToPath decodes spaces in the project path ("half marathon"); URL.pathname would not.
 const output = name => fileURLToPath(new URL(`../public/${name}`, import.meta.url));
@@ -41,11 +41,17 @@ async function capture(width, height, scale) {
   throw new Error(`The ${width}×${height} scene never rendered; assets were left unchanged.`);
 }
 
-const desktop = await capture(1512, 862, 1);
-// Chrome will not lay out a window narrower than 500px, so capture a phone-shaped 500px viewport and scale down.
-const mobile = await capture(500, 1082, 2);
-await sharp(desktop).webp({quality: 74}).toFile(output('scene-poster.webp'));
-await sharp(mobile).resize({width: 780}).webp({quality: 70}).toFile(output('scene-poster-mobile.webp'));
+// --share-only rebuilds just the share card from the existing desktop poster (e.g. after a copy change).
+const shareOnly = process.argv.includes('--share-only');
+let desktop;
+if (shareOnly) desktop = await readFile(output('scene-poster.webp'));
+else {
+  desktop = await capture(1512, 862, 1);
+  // Chrome will not lay out a window narrower than 500px, so capture a phone-shaped 500px viewport and scale down.
+  const mobile = await capture(500, 1082, 2);
+  await sharp(desktop).webp({quality: 74}).toFile(output('scene-poster.webp'));
+  await sharp(mobile).resize({width: 780}).webp({quality: 70}).toFile(output('scene-poster-mobile.webp'));
+}
 
 // Share card: scene on the right, copy on a paper panel on the left. The offer is plain text, not a fake button.
 const scene = await sharp(desktop).resize({height: 630}).toBuffer();
@@ -58,11 +64,11 @@ const copy = Buffer.from(`<svg width="1200" height="630" xmlns="http://www.w3.or
     <text x="60" y="340" font-size="72" font-weight="700" letter-spacing="-2">slow run.</text>
     <text x="64" y="398" font-size="28" fill="#505c52">Slow runner. Long exposure.</text>
     <text x="64" y="470" font-size="24">Bengaluru · 20 December 2026</text>
-    <text x="64" y="512" font-size="24" font-weight="700" fill="#a8371e">Your logo on my race kit · from $10 USD</text>
+    <text x="64" y="512" font-size="24" font-weight="700" fill="#a8371e">Your logo on my race kit · from $5 USD</text>
   </g>
 </svg>`);
 await sharp({create: {width: 1200, height: 630, channels: 3, background: '#f7f2e8'}})
   .composite([{input: scene, left: 300, top: 0}, {input: copy, left: 0, top: 0}])
   .jpeg({quality: 84, mozjpeg: true})
   .toFile(output('share.jpg'));
-console.log('Wrote scene-poster.webp, scene-poster-mobile.webp and share.jpg');
+console.log(shareOnly ? 'Wrote share.jpg' : 'Wrote scene-poster.webp, scene-poster-mobile.webp and share.jpg');

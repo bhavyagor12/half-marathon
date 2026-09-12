@@ -68,7 +68,7 @@ export function buildRaceStart(scene: Three.Scene, THREE: typeof Three) {
     upright.castShadow = false;
   }
   add(new THREE.BoxGeometry(9.5, .88, .42), red, 0, archHeight, archZ);
-  const event = sign(9.4, .83, '#ce4935', [{text:'BENGALURU HALF · 21.1K',y:.34,size:60},{text:'20 DECEMBER 2026   /   START',y:.76,size:54}]);
+  const event = sign(9.4, .83, '#ce4935', [{text:'BENGALURU HALF MARATHON · 21.1K',y:.34,size:56},{text:'20 DECEMBER 2026   /   START',y:.76,size:54}]);
   for (const side of [-1, 1]) {
     const banner = add(new THREE.PlaneGeometry(9.4, .83), event, 0, archHeight, archZ + side * .216);
     if (side === -1) banner.rotation.y = Math.PI;

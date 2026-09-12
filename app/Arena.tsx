@@ -5,10 +5,11 @@ import {buildRaceStart} from './RaceStart';
 import {AVATAR_HEIGHT, AVATAR_GROUND, AVATAR_ANCHORS} from '@/lib/avatar.mjs';
 import type {Mesh, Texture, Material, Object3D} from 'three';
 
-type Props = {sponsors: Sponsor[]; selected: number; onSelect: (n: number) => void; view: 'front' | 'back'; accent: string};
+type Props = {sponsors: Sponsor[]; selected: number; onSelect: (n: number) => void; view: 'front' | 'back'; accent: string; onShoeSelect: () => void};
 
 export default function Arena(props: Props) {
   const container = useRef<HTMLDivElement>(null);
+  const shoeLink = useRef<HTMLButtonElement>(null);
   const latest = useRef(props);
   useEffect(() => { latest.current = props; }, [props]);
   const [status, setStatus] = useState<'loading' | 'ready' | 'failed'>('loading');
@@ -48,7 +49,7 @@ export default function Arena(props: Props) {
         scene.background = new THREE.Color('#100908');
         scene.fog = new THREE.FogExp2('#100908', .035);
         const camera = new THREE.PerspectiveCamera(35, host.clientWidth / Math.max(1, host.clientHeight), .1, 100);
-        const distance = () => host.clientWidth < 640 ? 12.5 : 9.4;
+        const distance = () => host.clientWidth < 640 ? 13.5 : 12.8;
         camera.position.set(0, 2.7, latest.current.view === 'back' ? -distance() : distance());
         const renderer = new THREE.WebGLRenderer({antialias: true});
         cleanup = () => { dispose(scene); renderer.dispose(); renderer.domElement.remove(); };
@@ -65,10 +66,10 @@ export default function Arena(props: Props) {
         controls.target.set(0, 2.05, 0);
         controls.enablePan = false;
         controls.enableDamping = true;
-        controls.minDistance = 5;
-        controls.maxDistance = 13;
-        controls.minPolarAngle = .7;
-        controls.maxPolarAngle = 1.8;
+        controls.minDistance = 10;
+        controls.maxDistance = 16;
+        controls.minPolarAngle = 1.15;
+        controls.maxPolarAngle = 1.65;
         scene.add(new THREE.HemisphereLight('#fff3df', '#8e947c', 2.5));
         const key = new THREE.DirectionalLight('#ffedcb', 3);
         key.position.set(-3, 7, 5);
@@ -108,7 +109,11 @@ export default function Arena(props: Props) {
             body.push(object);
           }
         });
-        const disposeEnvironment = buildRaceStart(scene, THREE);
+        const environment = new THREE.Scene();
+        scene.add(environment);
+        const disposeEnvironment = buildRaceStart(environment, THREE);
+        scene.background = environment.background;
+        scene.fog = environment.fog;
         // Feet-relative anchors calibrated to the generated race kit. Project onto
         // actual geometry so fabric folds carry the labels during a full orbit.
         const patches: Mesh[] = [];
@@ -186,6 +191,7 @@ export default function Arena(props: Props) {
         renderer.domElement.addEventListener('pointerdown', down);
         renderer.domElement.addEventListener('pointerup', click);
         const resize = new ResizeObserver(() => {
+          camera.position.sub(controls.target).normalize().multiplyScalar(distance()).add(controls.target);
           camera.aspect = host.clientWidth / Math.max(1, host.clientHeight);
           camera.updateProjectionMatrix();
           renderer.setSize(host.clientWidth, host.clientHeight);
@@ -208,7 +214,14 @@ export default function Arena(props: Props) {
             camera.position.set(0, 2.7, state.view === 'back' ? -distance() : distance());
           }
           controls.update();
+          // Keep the start-line framing consistent while the runner is viewed from any side.
+          environment.rotation.y = Math.atan2(camera.position.x, camera.position.z);
           renderer.render(scene, camera);
+          if (shoeLink.current) {
+            const shoe = new THREE.Vector3(0, .40, 0).project(camera);
+            shoeLink.current.style.left = `${(shoe.x + 1) / 2 * host.clientWidth + (host.clientWidth < 640 ? 28 : 55)}px`;
+            shoeLink.current.style.top = `${(1 - shoe.y) / 2 * host.clientHeight - 12}px`;
+          }
         }
         cleanup = () => {
           cancelAnimationFrame(frame);
@@ -234,6 +247,7 @@ export default function Arena(props: Props) {
     return () => { cancelled = true; cleanup(); };
   }, [attempt]);
   return <div ref={container} className="arena" aria-busy={status === 'loading'}>
+    {status === 'ready' && <button ref={shoeLink} className="shoe-marker" onClick={() => latest.current.onShoeSelect()} aria-label="Sponsor my shoes">Shoes ↗</button>}
     {status === 'loading' && <div className="scene-fallback" role="status"><strong>21.1</strong><p>Loading Bhavya’s 3D race kit…</p></div>}
     {status === 'failed' && <div className="scene-fallback" role="status"><strong>21.1</strong><p>The 3D model couldn’t load.</p><button onClick={() => {setStatus('loading'); setAttempt(value => value + 1);}}>Retry 3D preview</button><button onClick={() => latest.current.onSelect(0)}>Explore the shirt spots ↗</button></div>}
   </div>;

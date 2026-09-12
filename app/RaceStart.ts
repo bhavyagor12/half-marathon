@@ -103,7 +103,7 @@ export function buildRaceStart(scene: Three.Scene, THREE: typeof Three) {
   const crowns=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,1),new THREE.MeshStandardMaterial({color:'#7c8a67',roughness:1}),treeCount*2);
   const transform=new THREE.Object3D();
   for(let n=0;n<treeCount;n++){
-    const side=n%2?1:-1, index=Math.floor(n/2), x=side*(5.5+Math.sin(n*2.4)*1.3),z=6-index*5.0;
+    const side=n%2?1:-1, index=Math.floor(n/2), x=side*(9+Math.sin(n*2.4)*.7),z=-12-index*5.0;
     transform.position.set(x,2,z);transform.scale.set(1,1,1);transform.rotation.set(0,0,0);transform.updateMatrix();trunks.setMatrixAt(n,transform.matrix);
     for(let layer=0;layer<2;layer++){transform.position.set(x+Math.sin(n)*.5,4.5+layer*.8,z);transform.scale.set(2.2+Math.sin(n)*.4,1.8,2.3);transform.rotation.set(n*.3,n,.2);transform.updateMatrix();crowns.setMatrixAt(n*2+layer,transform.matrix);}
   }

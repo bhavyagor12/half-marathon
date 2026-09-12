@@ -1,6 +1,6 @@
 # Bhavya 360° avatar — model handoff
 
-Status: **Meshy GLB generated and integrated into the local website; release validation in progress.** User explicitly requires full 360° rotation and very accurate likeness. A flat portrait, billboard, or generic procedural character does not satisfy this requirement.
+Status: **Meshy GLB generated and integrated into the local website; production build, focused lint, and all 14 tests passed. Publishing is pending explicit user approval after automatic review rejected the production-triggering push.** User explicitly requires full 360° rotation and very accurate likeness. A flat portrait, billboard, or generic procedural character does not satisfy this requirement.
 
 `bhavya-modeling-reference.png` is a generated frontal race-kit reference using the five user-supplied photographs and the built-in image-generation tool. It is a 1024 × 1536 RGB image with a baked checkerboard, not transparent alpha and not a mesh. Facial likeness has not been approved by Bhavya. The original photos remain the identity authority; the generated physique and clothing are approximations.
 

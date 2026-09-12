@@ -111,6 +111,5 @@ export function buildRaceStart(scene: Three.Scene, THREE: typeof Three) {
   // Distant city silhouettes suggest the city without inventing the race venue.
   const buildings=new THREE.MeshStandardMaterial({color:'#c4c2b4',roughness:1});
   for(let n=0;n<6;n++){const side=n%2?1:-1;add(new THREE.BoxGeometry(3,5+n%4*2,3),buildings,side*(10+n%3*4),2.5+n%4,-28-Math.floor(n/2)*5);}
-  const sun=add(new THREE.SphereGeometry(2.2,24,16),new THREE.MeshBasicMaterial({color:'#ffe6b5',fog:false}),-18,15,-47);sun.castShadow=false;
   return () => textures.forEach(texture => texture.dispose());
 }

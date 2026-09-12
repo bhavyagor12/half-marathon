@@ -10,5 +10,5 @@ export const metadata: Metadata = {
 };
 export const viewport: Viewport = {themeColor:'#f7f2e8'};
 export default function Layout({children}: {children: React.ReactNode}) {
-  return <html lang="en"><head><link rel="preload" href="/scene-poster.webp" as="image"/><link rel="preload" href="/fonts/geist-latin.woff2" as="font" type="font/woff2" crossOrigin="anonymous"/></head><body>{children}</body></html>;
+  return <html lang="en"><head><link rel="preload" href="/scene-poster.webp" as="image" media="(min-width: 701px)"/><link rel="preload" href="/scene-poster-mobile.webp" as="image" media="(max-width: 700px)"/><link rel="preload" href="/fonts/geist-latin.woff2" as="font" type="font/woff2" crossOrigin="anonymous"/></head><body>{children}</body></html>;
 }

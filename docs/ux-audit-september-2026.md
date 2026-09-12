@@ -21,6 +21,17 @@ The public product name is **Sponsor my slow run**. Bhavya reconfirmed USD on Se
 - No-JavaScript poster/metadata, aborted-download retry, and real touch rotation/pinch tests passed on both the development server and the production build.
 - The supplied browser runtime still fails initialization; checks use an isolated headless Chrome profile, not the user's signed-in browser.
 
+## Second audit fixes (September 12)
+
+- **Blank scene:** the poster was removed as soon as the render loop started, but `requestAnimationFrame` does not run in hidden or occluded tabs, so visitors saw the page background. The first frame is now drawn synchronously before the poster fades, and the scene also redraws on prop changes, resizes, `visibilitychange`, logo loads and OrbitControls `change` events whenever no animation frame has run recently.
+- **Full-bleed canvas:** the canvas always covers the viewport. `.scene-frame` marks the clear area between HUD layers, and `camera.setViewOffset` frames the runner inside it. Opening a panel shifts the frame instead of resizing the canvas, so the scene no longer flashes blank and the road fades into the bottom vignette instead of ending in a hard edge.
+- **View state:** Front/Back and Full kit/Close-up are matching segmented controls. Every press bumps `frameKey`, so pressing the active side still resets a dragged view. Reframing flushes OrbitControls damping so the camera cannot drift afterwards. A drag only updates the Front/Back switch.
+- **Framing and scale:** full kit targets y 1.86 at distance 5.6+, close-up y 2.08 at 3.3+. That leaves a clear gap between the head and the arch banner in both framings. The decorative sun behind the title card was removed.
+- **Spots:** open spots are cream chips with a dashed accent outline, matching the panel chips. The chosen spot is filled with the accent. Decal textures match each spot's proportions, sleeve spots sit inside the sleeve, and the Spots switch hides every open marker (unless a panel is showing that spot).
+- **Panels:** contextual eyebrows, a front/back kit diagram built from the decal anchors, and a facts list (status, takeover price, logo lock date). The email copy is first person throughout.
+- **HUD:** shoes moved to a bottom-left card on desktop and an inline link under the CTA on mobile. The creator photo has an X badge, the focus ring uses the ink colour, the loader sits away from the runner, and mobile controls stay hidden until the scene is ready.
+- **Assets:** `npm run capture:scene` (dev server running) photographs the bare scene with headless Chrome via `?capture` and regenerates `scene-poster.webp`, `scene-poster-mobile.webp` and `share.jpg`, so the poster matches the first 3D frame. The share card's offer is plain text rather than a button-like pill.
+
 ## Local development
 
 Use Node 22. `npm run dev` serves the live source; the current requested server is on `http://localhost:3001` because port 3000 was occupied. `npm run build:vercel` stages shared files under ignored `.vercel-next`. Vercel deploys main and continues proxying payment/data routes to the existing Sites backend; do not remove that backend.

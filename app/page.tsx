@@ -1,20 +1,23 @@
 'use client';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import Arena from './Arena';
+import KitDiagram from './KitDiagram';
 import SponsorForm from './SponsorForm';
 import {RACE_DATE, SPOTS, nextPrice, type Sponsor} from '@/lib/config';
 
-type Panel = 'spots' | 'detail' | 'story' | 'shoes' | 'rules' | null;
+type Panel = 'spots' | 'detail' | 'story' | 'shoes' | 'rules';
 const EMAIL = 'bhavya.gor9999@gmail.com';
 const RACE_URL = 'https://timesofindia.indiatimes.com/times-events/marathon/bengaluru/2026';
+const spotNumber = (n: number) => String(n + 1).padStart(2, '0');
 function FullscreenIcon() {
   return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></svg>;
 }
 export default function Home() {
   const [sponsors, setSponsors] = useState<Sponsor[]>([]), [enabled, setEnabled] = useState(false);
   const [error, setError] = useState(false), [loaded, setLoaded] = useState(false);
-  const [selected, setSelected] = useState(0), [panel, setPanel] = useState<Panel>(null);
-  const [view, setView] = useState<'front' | 'back'>('front'), [portrait, setPortrait] = useState(false);
+  const [selected, setSelected] = useState(-1), [panel, setPanel] = useState<Panel | null>(null);
+  const [view, setView] = useState<'front' | 'back'>('front'), [closeUp, setCloseUp] = useState(false);
+  const [frameKey, setFrameKey] = useState(0), [capture, setCapture] = useState(false);
   const [showSpots, setShowSpots] = useState(true), [remaining, setRemaining] = useState<number[] | null>(null);
   const dialog = useRef<HTMLDialogElement>(null), returnFocus = useRef<HTMLElement | null>(null);
   const reload = useCallback(() => {
@@ -28,7 +31,12 @@ export default function Home() {
       const t = Math.max(0, Math.floor((Date.parse(RACE_DATE) - Date.now()) / 1000));
       setRemaining([Math.floor(t / 86400), Math.floor(t % 86400 / 3600), Math.floor(t % 3600 / 60), t % 60]);
     };
-    const initial = setTimeout(() => {tick(); if (new URLSearchParams(location.search).has('checkout')) setPanel('detail');}, 0);
+    const initial = setTimeout(() => {
+      tick(); const params = new URLSearchParams(location.search);
+      // ?capture hides the HUD so scripts/capture-scene.mjs can photograph the bare scene.
+      setCapture(params.has('capture'));
+      if (params.has('checkout')) {setSelected(0); setPanel('detail');}
+    }, 0);
     const timer = setInterval(tick, 1000);
     return () => {clearInterval(refresh); clearInterval(timer); clearTimeout(initial);};
   }, [reload]);
@@ -49,11 +57,20 @@ export default function Home() {
     document.addEventListener('keydown', escape);
     return () => document.removeEventListener('keydown', escape);
   }, [panel]);
-  const choose = (n: number) => {setSelected(n); setView(n >= 5 ? 'back' : 'front'); setPortrait(n !== 8); setShowSpots(true); open('detail');};
+  // Bumping frameKey makes the scene reframe even when the pressed option is already active.
+  const reframe = (change: () => void) => {change(); setFrameKey(key => key + 1);};
+  const choose = (n: number) => {setSelected(n); setView(n >= 5 ? 'back' : 'front'); setCloseUp(n !== 8); setShowSpots(true); setFrameKey(key => key + 1); open('detail');};
   const openCount = 9 - sponsors.length;
-  const title = panel === 'story' ? 'Slow runner. Long exposure.' : panel === 'shoes' ? 'Put your shoes on the start line.' : panel === 'rules' ? 'The small print.' : panel === 'detail' ? SPOTS[selected] : 'Choose your spot.';
-  return <main className={`experience ${panel ? 'has-panel' : ''}`}>
-    <Arena sponsors={sponsors} selected={selected} onSelect={choose} view={view} onViewChange={setView} portrait={portrait} showSpots={showSpots} panelOpen={!!panel} onShoeSelect={() => open('shoes')}/>
+  const headings: Record<Panel, [string, string]> = {
+    spots: ['9 spots on the race kit', 'Choose your spot.'],
+    detail: [`Spot ${spotNumber(selected)} · ${selected >= 5 ? 'back' : 'front'} of the kit`, SPOTS[selected] ?? 'Choose your spot.'],
+    story: ['How it works', 'Slow runner. Long exposure.'],
+    shoes: ['Footwear partnership', 'Put your shoes on the start line.'],
+    rules: ['Terms & privacy', 'The small print.'],
+  };
+  const [eyebrow, title] = panel ? headings[panel] : ['', ''];
+  return <main className={`experience ${panel ? 'has-panel' : ''} ${capture ? 'capture' : ''}`}>
+    <Arena sponsors={sponsors} selected={selected} onSelect={choose} onBrowse={() => open('spots')} view={view} onViewChange={setView} closeUp={closeUp} showSpots={showSpots} panelOpen={!!panel} frameKey={frameKey} capture={capture}/>
     <div className="vignette"/>
     <header className="identity hud">
       <button className="title" onClick={() => open('story')}>Sponsor my slow run</button>
@@ -63,19 +80,20 @@ export default function Home() {
     <div className="countdown hud" aria-label={remaining ? `${remaining[0]} days until race day` : 'Race day is December 20, 2026'}>
       <span>Race day in</span><strong>{['d','h','m','s'].map((unit, i) => <span key={unit}>{remaining ? String(remaining[i]).padStart(2, '0') : '—'}<small>{unit}</small></span>)}</strong>
     </div>
-    <div className="scene-controls hud" aria-label="3D view controls">
-      <div className="view-switch" role="group" aria-label="Runner side"><button aria-pressed={view === 'front'} title="View the front of the race kit" onClick={() => setView('front')}>Front</button><button aria-pressed={view === 'back'} title="View the back of the race kit" onClick={() => setView('back')}>Back</button></div>
-      <button className="control" aria-pressed={portrait} title={portrait ? 'Show the whole race kit' : 'See Bhavya and the tee up close'} onClick={() => setPortrait(!portrait)}>{portrait ? 'Full kit' : 'Close-up'}</button>
-      <button className="control spots-toggle" aria-pressed={showSpots} title="Show or hide all numbered sponsorship spots" onClick={() => setShowSpots(!showSpots)}>Show spots</button>
+    <div className="scene-controls hud" role="toolbar" aria-label="3D view controls">
+      <div className="segmented" role="group" aria-label="Runner side"><button aria-pressed={view === 'front'} title="View the front of the race kit" onClick={() => reframe(() => setView('front'))}>Front</button><button aria-pressed={view === 'back'} title="View the back of the race kit" onClick={() => reframe(() => setView('back'))}>Back</button></div>
+      <div className="segmented" role="group" aria-label="Camera distance"><button aria-pressed={!closeUp} title="Show the whole race kit" onClick={() => reframe(() => setCloseUp(false))}>Full kit</button><button aria-pressed={closeUp} title="See Bhavya and the tee up close" onClick={() => reframe(() => setCloseUp(true))}>Close-up</button></div>
+      <button className="switch" role="switch" aria-checked={showSpots} title="Show or hide the numbered sponsorship spots" onClick={() => setShowSpots(!showSpots)}><span className="switch-track" aria-hidden="true"/>Spots</button>
       <button className="control fullscreen" aria-label="Toggle full screen" title="Full screen" onClick={() => {if (document.fullscreenElement) void document.exitFullscreen(); else void document.documentElement.requestFullscreen?.();}}><FullscreenIcon/></button>
     </div>
     <div className="main-action hud">
       <button className="primary" onClick={() => open('spots')}>{error ? 'Explore sponsorship spots' : !loaded ? 'View spots · from $10 USD' : openCount ? `View ${openCount} open spots · from $10 USD` : 'View sponsors · take over a spot'}<span aria-hidden="true">→</span></button>
-      <small><span className="desktop-hint">Drag to rotate · Scroll to zoom</span><span className="touch-hint">Drag to rotate · Pinch to zoom</span></small>
+      <small><span className="desktop-hint">Drag to rotate · Scroll to zoom</span><span className="touch-hint"><span className="rotate-hint">Drag to rotate · </span>Pinch to zoom</span><span className="mobile-shoes"> · <button className="hint-shoes" onClick={() => open('shoes')}>Sponsor my shoes →</button></span></small>
     </div>
-    <a className="creator hud" href="https://x.com/bhavya_gor" target="_blank" rel="noopener noreferrer" aria-label="Bhavya Gor on X, opens in a new tab"><img src="/bhavya-x-avatar.jpg" alt="" width="44" height="44"/><span>@bhavya_gor ↗</span></a>
+    <button className="shoe-cta hud" onClick={() => open('shoes')}><small>Make running shoes?</small>Sponsor my shoes →</button>
+    <a className="creator hud" href="https://x.com/bhavya_gor" target="_blank" rel="noopener noreferrer" aria-label="Bhavya Gor on X, opens in a new tab"><span className="creator-photo"><img src="/bhavya-x-avatar.jpg" alt="" width="44" height="44"/><span className="x-badge" aria-hidden="true">𝕏</span></span><span className="creator-handle">@bhavya_gor ↗</span></a>
     {panel && <dialog open ref={dialog} className={`panel ${panel === 'spots' || panel === 'detail' ? 'spots-panel' : ''} ${panel === 'detail' ? 'detail-panel' : ''}`} aria-labelledby="panel-title" aria-modal="false">
-      <div className="panel-heading"><div><span className="eyebrow">Sponsor my slow run</span><h1 id="panel-title" tabIndex={-1} data-panel-focus>{title}</h1></div><button className="close" aria-label="Close panel" title="Close (Esc)" onClick={close}>×</button></div>
+      <div className="panel-heading"><div><span className="eyebrow">{eyebrow}</span><h1 id="panel-title" tabIndex={-1} data-panel-focus>{title}</h1></div><button className="close" aria-label="Close panel" title="Close (Esc)" onClick={close}>×</button></div>
       <div className="panel-content">
         {panel === 'spots' && <>
           <p className="panel-intro">Your logo on my race kit. Tee spots from $10 USD; the premium butt spot from $20. Each takeover doubles the price.</p>
@@ -83,15 +101,15 @@ export default function Home() {
           <div className="spot-list">{SPOTS.map((name,n) => {
             const sponsor = sponsors.find(s => s.slot === n), price = nextPrice(n, sponsor?.amount) / 100;
             return <button key={name} className="spot" aria-label={`${name}, ${sponsor ? `held by ${sponsor.brand}, next takeover` : 'open'}, $${price} USD`} onClick={() => choose(n)}>
-              <span className="spot-number">{String(n + 1).padStart(2, '0')}</span><span className="spot-name">{name}<small>{sponsor?.brand || (n === 8 ? 'Premium placement' : 'Open spot')}</small></span><b>${price}<small>USD</small></b><span className="row-arrow" aria-hidden="true">→</span>
+              <span className="spot-number">{spotNumber(n)}</span><span className="spot-name">{name}<small>{sponsor?.brand || (n === 8 ? 'Premium placement' : 'Open spot')}</small></span><b>${price}<small>USD</small></b><span className="row-arrow" aria-hidden="true">→</span>
             </button>;
           })}</div>
           <section className="shoe-partnership"><h2>Footwear partnerships</h2><p>Make running shoes? Send a pair and join the run.</p><button className="secondary" onClick={() => open('shoes')}>Sponsor my shoes →</button></section>
           <button className="text-button terms-link" onClick={() => open('rules')}>Sponsorship terms & privacy</button>
         </>}
-        {panel === 'detail' && <>
+        {panel === 'detail' && selected >= 0 && <>
           <button className="text-button back-link" onClick={() => open('spots')}>← All 9 spots</button>
-          <p className="selected-note"><span>{String(selected + 1).padStart(2, '0')}</span>Highlighted on the {selected >= 5 ? 'back' : 'front'} of the kit.</p>
+          <KitDiagram selected={selected}/>
           <SponsorForm key={selected} selected={selected} sponsors={sponsors} enabled={enabled && !error} reload={reload}/>
           <button className="text-button terms-link" onClick={() => open('rules')}>Sponsorship terms & privacy</button>
         </>}

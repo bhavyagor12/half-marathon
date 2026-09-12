@@ -2,12 +2,10 @@ import {cp,mkdir,rm,writeFile} from 'node:fs/promises';
 import {spawnSync} from 'node:child_process';
 const stage=new URL('../.vercel-next/',import.meta.url);
 await rm(stage,{recursive:true,force:true});
-await mkdir(new URL('app/api/[...path]/',stage),{recursive:true});
 await mkdir(new URL('lib/',stage),{recursive:true});
-for(const file of ['page.tsx','layout.tsx','globals.css','Arena.tsx','RaceStart.ts','SponsorForm.tsx','KitDiagram.tsx','MusicToggle.tsx'])await cp(new URL(`../app/${file}`,import.meta.url),new URL(`app/${file}`,stage));
-await cp(new URL('../lib/config.ts',import.meta.url),new URL('lib/config.ts',stage));
-await cp(new URL('../lib/avatar.mjs',import.meta.url),new URL('lib/avatar.mjs',stage));
-await cp(new URL('../vercel-adapter/route.ts',import.meta.url),new URL('app/api/[...path]/route.ts',stage));
+// Stage only the Next.js app: UI plus the Supabase-backed API routes. Legacy Cloudflare Worker/Sites files stay out of the build.
+await cp(new URL('../app/',import.meta.url),new URL('app/',stage),{recursive:true,filter:source=>!source.endsWith('chatgpt-auth.ts')});
+for(const file of ['config.ts','avatar.mjs','server.ts','refunds.ts','refund-math.ts'])await cp(new URL(`../lib/${file}`,import.meta.url),new URL(`lib/${file}`,stage));
 await cp(new URL('../public/',import.meta.url),new URL('public/',stage),{recursive:true});
 await cp(new URL('../postcss.config.mjs',import.meta.url),new URL('postcss.config.mjs',stage));
 await writeFile(new URL('package.json',stage),JSON.stringify({name:'slow-club-vercel',private:true,type:'module'}));

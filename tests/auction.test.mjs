@@ -1,20 +1,36 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {DatabaseSync} from 'node:sqlite';
-import {readFileSync,readdirSync} from 'node:fs';
-const route=readFileSync(new URL('../app/api/webhooks/dodo/route.ts',import.meta.url),'utf8');
-// Exercise the real award statements from the route against SQLite, not mirrored SQL.
-const awardSQL=[...route.matchAll(/db\(\)\.prepare\("([^"]+)"\)/g)].map(m=>m[1]).filter(s=>s.startsWith('UPDATE slots SET owner_id')||s.startsWith("UPDATE orders SET status='paid'")||s.startsWith('INSERT OR IGNORE INTO refund_jobs (payment,order_id,mode,status,created) SELECT')||s.startsWith("UPDATE orders SET status='outbid'"));
-function setup(){const db=new DatabaseSync(':memory:');for(const f of readdirSync(new URL('../drizzle/',import.meta.url)).filter(f=>f.endsWith('.sql')).sort())db.exec(readFileSync(new URL(`../drizzle/${f}`,import.meta.url),'utf8'));db.exec('INSERT INTO slots(id,version,paid,reserved_until) VALUES(0,0,0,0)');return db;}
-function order(db,id,previous=null,version=0,amount=1000){db.prepare("INSERT INTO orders(id,slot,amount,brand,tagline,website,token_hash,status,expires,created,expected_version,previous_id) VALUES(?,0,?,'Test','Test','https://example.com',?,'pending',9999,0,?,?)").run(id,amount,id,version,previous);}
-function award(db,id,payment,version,previous=null,now=1,close=100){assert.equal(awardSQL.length,4);db.exec('BEGIN');try{const args=[[id,0,id,version,now,close,id],[payment,id,0,id],[now,previous,0,id],[previous,0,id]];awardSQL.forEach((sql,i)=>db.prepare(sql).run(...args[i]));db.exec('COMMIT');}catch(e){db.exec('ROLLBACK');throw e;}}
-test('first paid bid owns a spot; replay changes nothing',()=>{const db=setup();order(db,'a');db.prepare('UPDATE slots SET order_id=?').run('a');award(db,'a','pay_a',0);award(db,'a','pay_a',0);assert.equal(db.prepare('SELECT version FROM slots').get().version,1);assert.equal(db.prepare('SELECT status FROM orders').get().status,'paid');assert.equal(db.prepare('SELECT count(*) n FROM refund_jobs').get().n,0);});
-test('takeover atomically changes owner and creates one refund job for previous owner',()=>{const db=setup();order(db,'a');db.prepare('UPDATE slots SET order_id=?').run('a');award(db,'a','pay_a',0);order(db,'b','a',1,2000);db.prepare('UPDATE slots SET order_id=?').run('b');award(db,'b','pay_b',1,'a');award(db,'b','pay_b',1,'a');assert.equal(db.prepare('SELECT owner_id FROM slots').get().owner_id,'b');assert.equal(db.prepare("SELECT status FROM orders WHERE id='a'").get().status,'outbid');assert.equal(db.prepare('SELECT count(*) n FROM refund_jobs').get().n,1);assert.equal(db.prepare('SELECT payment,mode FROM refund_jobs').get().payment,'pay_a');});
-test('expired checkout cannot take a newly reserved spot',()=>{const db=setup();order(db,'a');order(db,'b');db.prepare('UPDATE slots SET order_id=?').run('b');award(db,'a','pay_a',0);assert.equal(db.prepare('SELECT owner_id FROM slots').get().owner_id,null);assert.equal(db.prepare("SELECT status FROM orders WHERE id='a'").get().status,'pending');});
-test('stale version and payment after auction close cannot win',()=>{for(const [version,now] of [[1,1],[0,101]]){const db=setup();order(db,'a');db.prepare('UPDATE slots SET order_id=?').run('a');award(db,'a','pay_a',version,null,now);assert.equal(db.prepare('SELECT owner_id FROM slots').get().owner_id,null);}});
-test('concurrent checkout locks permit only one reservation per version',()=>{const db=setup();const sql=readFileSync(new URL('../app/api/checkout/route.ts',import.meta.url),'utf8').match(/prepare\('(UPDATE slots SET order_id=[^']+)'\)/)[1];const a=db.prepare(sql).run('a',100,0,0,1);const b=db.prepare(sql).run('b',100,0,0,1);assert.equal(a.changes,1);assert.equal(b.changes,0);});
-test('payment identity is unique across bids',()=>{const db=setup();order(db,'a');order(db,'b');db.prepare('UPDATE orders SET payment=? WHERE id=?').run('pay_a','a');assert.throws(()=>db.prepare('UPDATE orders SET payment=? WHERE id=?').run('pay_a','b'));});
+import {readFileSync} from 'node:fs';
+import {PGlite} from '@electric-sql/pglite';
 import ts from 'typescript';
+
+// Run the real Supabase migration in an in-memory Postgres and exercise its auction functions directly.
+const migration=readFileSync(new URL('../supabase/migrations/20260912000000_slowrun_auction.sql',import.meta.url),'utf8');
+// Supabase provides these roles and the storage schema; recreate the minimum so the migration runs unchanged.
+const SUPABASE_STUBS='create role anon; create role authenticated; create role service_role; create schema storage; create table storage.buckets (id text primary key, name text, public boolean, file_size_limit bigint, allowed_mime_types text[]);';
+async function setup(){const db=new PGlite();await db.exec(SUPABASE_STUBS);await db.exec(migration);return db;}
+const call=async(db,fn,args)=>(await db.query(`select public.${fn}(${args.map((_,i)=>`$${i+1}`).join(',')}) as result`,args)).rows[0].result;
+const reserve=(db,id,version,{slot=0,amount=1000,now=1,expires=1000}={})=>call(db,'slowrun_reserve_slot',[id,slot,version,amount,'Brand','Tagline','https://example.com',id,now,expires]);
+const award=(db,id,payment,{now=2,close=10000}={})=>call(db,'slowrun_award_payment',[id,payment,now,close]);
+const row=async(db,sql,args=[])=>(await db.query(sql,args)).rows[0];
+
+test('first paid bid owns a spot; a replayed webhook changes nothing',async()=>{const db=await setup();assert.equal(await reserve(db,'a',0),'reserved');assert.equal(await award(db,'a','pay_a'),'paid');assert.equal(await award(db,'a','pay_a'),'replay');const slot=await row(db,'select owner_id,version,reserved_until from slowrun_slots where id=0');assert.deepEqual([slot.owner_id,slot.version,Number(slot.reserved_until)],['a',1,0]);assert.equal((await row(db,"select status from slowrun_orders where id='a'")).status,'paid');assert.equal((await row(db,'select count(*)::int n from slowrun_refund_jobs')).n,0);});
+
+test('takeover changes owner atomically and queues exactly one outbid refund',async()=>{const db=await setup();await reserve(db,'a',0);await award(db,'a','pay_a');assert.equal(await reserve(db,'b',1,{amount:2000,now:3}),'reserved');assert.equal(await award(db,'b','pay_b',{now:4}),'paid');assert.equal(await award(db,'b','pay_b',{now:5}),'replay');assert.equal((await row(db,'select owner_id from slowrun_slots where id=0')).owner_id,'b');assert.equal((await row(db,"select status from slowrun_orders where id='a'")).status,'outbid');assert.equal((await row(db,"select previous_id from slowrun_orders where id='b'")).previous_id,'a');const jobs=(await db.query('select payment,mode,status from slowrun_refund_jobs')).rows;assert.deepEqual(jobs,[{payment:'pay_a',mode:'outbid',status:'pending'}]);});
+
+test('reservations lock a version: a live hold is busy, an old version is stale',async()=>{const db=await setup();assert.equal(await reserve(db,'a',0,{now:1,expires:100}),'reserved');assert.equal(await reserve(db,'b',0,{now:2}),'busy');assert.equal(await reserve(db,'c',1,{now:2}),'stale');});
+
+test('an expired checkout cannot take a spot another buyer reserved; it is refunded in full',async()=>{const db=await setup();await reserve(db,'a',0,{now:1,expires:5});assert.equal(await reserve(db,'b',0,{now:6,expires:100}),'reserved');assert.equal(await award(db,'a','pay_a',{now:7}),'unfulfilled');assert.equal((await row(db,'select owner_id from slowrun_slots where id=0')).owner_id,null);assert.equal((await row(db,"select status from slowrun_orders where id='a'")).status,'unfulfilled');assert.deepEqual((await db.query('select payment,mode from slowrun_refund_jobs')).rows,[{payment:'pay_a',mode:'unfulfilled'}]);assert.equal(await award(db,'b','pay_b',{now:8}),'paid');});
+
+test('a stale version or a payment after bidding closes cannot win',async()=>{const late=await setup();await reserve(late,'a',0);assert.equal(await award(late,'a','pay_a',{now:10001,close:10000}),'unfulfilled');assert.equal((await row(late,'select owner_id from slowrun_slots where id=0')).owner_id,null);
+const stale=await setup();await reserve(stale,'a',0,{now:1,expires:5});await reserve(stale,'b',0,{now:6,expires:100});await award(stale,'b','pay_b',{now:7});assert.equal(await award(stale,'a','pay_a',{now:8}),'unfulfilled');assert.equal((await row(stale,'select owner_id,version from slowrun_slots where id=0')).owner_id,'b');});
+
+test('a second payment for a settled order is queued for a full refund and a payment id is unique',async()=>{const db=await setup();await reserve(db,'a',0);await award(db,'a','pay_a');assert.equal(await award(db,'a','pay_again'),'duplicate');assert.deepEqual((await db.query("select payment,mode from slowrun_refund_jobs where payment='pay_again'")).rows,[{payment:'pay_again',mode:'unfulfilled'}]);await reserve(db,'b',0,{slot:1});await assert.rejects(db.query("update slowrun_orders set payment='pay_a' where id='b'"));assert.equal(await award(db,'missing','pay_x'),'unknown');});
+
+test('rate limit counts requests in a window and expires old keys',async()=>{const db=await setup();assert.equal(await call(db,'slowrun_hit_rate_limit',['k',1000]),1);assert.equal(await call(db,'slowrun_hit_rate_limit',['k',1001]),2);assert.equal(await call(db,'slowrun_hit_rate_limit',['k',200000]),1);});
+
+test('the public anon role cannot read or write auction tables',async()=>{const db=await setup();await db.exec('set role anon');await assert.rejects(db.query('select * from slowrun_orders'));await assert.rejects(db.query('update slowrun_slots set owner_id=null'));await assert.rejects(db.query("select public.slowrun_award_payment('a','p',1,2)"));});
+
 async function sourceModule(path){const js=ts.transpileModule(readFileSync(new URL(path,import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext}}).outputText;return import(`data:text/javascript;base64,${Buffer.from(js).toString('base64')}`);}
 const {nextPrice}=await sourceModule('../lib/config.ts');
 const {refundAfterFees}=await sourceModule('../lib/refund-math.ts');

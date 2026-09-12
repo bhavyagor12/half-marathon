@@ -6,13 +6,15 @@ import {buildRaceStart} from './RaceStart';
 import type {Mesh, Texture, Material, Object3D} from 'three';
 
 type Props = {
-  sponsors: Sponsor[]; selected: number; onSelect: (n: number) => void; onBrowse: () => void;
+  sponsors: Sponsor[]; selected: number; onSelect: (n: number, point?: {x: number; y: number}) => void; onBrowse: () => void;
   view: 'front' | 'back'; onViewChange: (view: 'front' | 'back') => void;
   closeUp: boolean; showSpots: boolean; panelOpen: boolean; frameKey: number; capture: boolean;
 };
-const ACCENT = '#a8371e', CREAM = '#fffaf0';
+// Open stickers use a warm tint so they read against both the white tee and skin; hover deepens it.
+const ACCENT = '#a8371e', CREAM = '#fffaf0', OPEN = '#ffe0d3', HOVER = '#ffc4ae';
+const spotNumber = (n: number) => String(n + 1).padStart(2, '0');
 export default function Arena(props: Props) {
-  const container = useRef<HTMLDivElement>(null), frameBox = useRef<HTMLDivElement>(null);
+  const container = useRef<HTMLDivElement>(null), frameBox = useRef<HTMLDivElement>(null), hoverCard = useRef<HTMLDivElement>(null);
   const latest = useRef(props), sync = useRef<(() => void) | null>(null);
   // Every prop change redraws immediately instead of waiting for an animation frame.
   useEffect(() => {latest.current = props; sync.current?.();});
@@ -74,7 +76,7 @@ export default function Arena(props: Props) {
         renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1;
-        renderer.domElement.setAttribute('aria-label', 'Bhavya’s 3D race kit. Drag to rotate; use the Front, Back, Full kit and Close-up buttons for keyboard controls.');
+        renderer.domElement.setAttribute('aria-label', 'Bhavya’s 3D race kit. Drag to rotate; use the Front, Back and zoom buttons for keyboard controls.');
         host.appendChild(renderer.domElement);
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enablePan = false; controls.enableDamping = true; controls.dampingFactor = .12;
@@ -130,7 +132,7 @@ export default function Arena(props: Props) {
         AVATAR_ANCHORS.forEach(([x, y, width, height, side], slot) => {
           // Match the texture to the decal's proportions so numbers are never stretched.
           const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = Math.round(512 * height / width);
-          const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace;
+          const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; texture.anisotropy = 4;
           slots.push({canvas, texture, generation: 0});
           projector.set(new THREE.Vector3(x, y + AVATAR_GROUND, side * 3), new THREE.Vector3(0, 0, -side));
           const hit = projector.intersectObjects(body, false)[0];
@@ -140,7 +142,7 @@ export default function Arena(props: Props) {
           const patch = new THREE.Mesh(geometry, material); patch.renderOrder = 1; patch.userData.slot = slot;
           scene.add(patch); patches.push(patch);
         });
-        let lastFrame = 0;
+        let lastFrame = 0, hovered = -1;
         const draw = () => {
           const state = latest.current;
           patches.forEach((patch, n) => {patch.visible = state.showSpots || state.sponsors.some(s => s.slot === n) || (state.panelOpen && n === state.selected);});
@@ -153,23 +155,24 @@ export default function Arena(props: Props) {
         function updatePatches() {
           slots.forEach((slot, n) => {
             const {canvas} = slot, ctx = canvas.getContext('2d')!, state = latest.current, w = canvas.width, h = canvas.height;
-            const sponsor = state.sponsors.find(item => item.slot === n), generation = ++slot.generation, chosen = n === state.selected;
-            const outline = () => {ctx.beginPath(); ctx.roundRect(12, 12, w - 24, h - 24, Math.min(w, h) * .14);};
-            // Open spots mirror the dashed chips in the panel; the chosen spot is filled with the accent.
-            ctx.clearRect(0, 0, w, h); outline();
-            ctx.fillStyle = chosen ? ACCENT : CREAM; ctx.fill();
-            ctx.strokeStyle = chosen ? '#ffffff' : ACCENT; ctx.lineWidth = 16; ctx.setLineDash(chosen ? [] : [30, 18]); ctx.stroke();
-            ctx.fillStyle = chosen ? '#ffffff' : ACCENT; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.font = `bold ${Math.round(Math.min(h * .52, 150))}px Arial`; ctx.fillText(String(n + 1).padStart(2, '0'), w / 2, h / 2 + 4);
+            const sponsor = state.sponsors.find(item => item.slot === n), generation = ++slot.generation, chosen = n === state.selected, hot = n === hovered;
+            const radius = Math.min(w, h) * .18;
+            const outline = (inset: number) => {ctx.beginPath(); ctx.roundRect(inset, inset, w - inset * 2, h - inset * 2, radius);};
+            // Open spots read as blank stickers: solid cream with an accent rim. Hover warms the fill; the chosen spot fills with the accent.
+            ctx.clearRect(0, 0, w, h); outline(8);
+            ctx.fillStyle = chosen ? ACCENT : hot ? HOVER : OPEN; ctx.fill();
+            ctx.lineWidth = hot && !chosen ? 30 : 22; ctx.strokeStyle = chosen ? CREAM : ACCENT; ctx.stroke();
+            ctx.fillStyle = chosen ? CREAM : ACCENT; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.font = `bold ${Math.round(Math.min(h * .5, w * .42, 150))}px Arial`; ctx.fillText(spotNumber(n), w / 2, h / 2 + 4);
             slot.texture.needsUpdate = true;
             if (sponsor?.logo) {
               const image = new Image();
               image.onload = () => {
                 if (cancelled || generation !== slot.generation) return;
-                ctx.clearRect(0, 0, w, h); outline(); ctx.fillStyle = CREAM; ctx.fill();
+                ctx.clearRect(0, 0, w, h); outline(8); ctx.fillStyle = CREAM; ctx.fill();
                 const scale = Math.min((w - 64) / image.width, (h - 64) / image.height);
                 ctx.drawImage(image, (w - image.width * scale) / 2, (h - image.height * scale) / 2, image.width * scale, image.height * scale);
-                outline(); ctx.strokeStyle = ACCENT; ctx.lineWidth = chosen ? 20 : 8; ctx.setLineDash([]); ctx.stroke();
+                outline(8); ctx.strokeStyle = ACCENT; ctx.lineWidth = chosen || hot ? 22 : 8; ctx.stroke();
                 slot.texture.needsUpdate = true; requestDraw();
               }; image.src = sponsor.logo;
             }
@@ -178,23 +181,49 @@ export default function Arena(props: Props) {
         let patchSignature = '', viewSignature = '';
         const update = () => {
           const state = latest.current;
-          const nextPatches = JSON.stringify([state.sponsors, state.selected]);
+          const nextPatches = JSON.stringify([state.sponsors, state.selected, hovered]);
           if (nextPatches !== patchSignature) {patchSignature = nextPatches; updatePatches();}
-          // frameKey changes on every Front/Back/Full kit/Close-up press, so pressing the current side still resets a dragged view.
+          // frameKey changes on every Front/Back/zoom press, so pressing the current side still resets a dragged view.
           const nextView = [state.view, state.closeUp, state.frameKey].join();
           if (layout() || nextView !== viewSignature) {viewSignature = nextView; frameView();}
           draw();
         };
         const raycaster = new THREE.Raycaster(); let start = {x:0, y:0}, moved = false;
+        const pick = (clientX: number, clientY: number) => {
+          const rect = renderer.domElement.getBoundingClientRect();
+          raycaster.setFromCamera(new THREE.Vector2((clientX-rect.left)/rect.width*2-1, -(clientY-rect.top)/rect.height*2+1), camera);
+          const visible = patches.filter((patch, n) => patch.visible && AVATAR_ANCHORS[n][4] * camera.position.z > .15);
+          const hit = raycaster.intersectObjects(visible, false)[0];
+          if (!hit) return -1;
+          const occluder = raycaster.intersectObjects(body, false)[0];
+          return !occluder || hit.distance <= occluder.distance + .006 ? hit.object.userData.slot as number : -1;
+        };
+        let pointer = {x: 0, y: 0}, hoverQueued = false;
+        const showHover = (next: number) => {
+          if (next !== hovered) {hovered = next; renderer.domElement.style.cursor = next >= 0 ? 'pointer' : ''; update();}
+          const card = hoverCard.current;
+          if (!card) return;
+          if (next < 0) {card.classList.remove('is-visible'); return;}
+          const sponsor = latest.current.sponsors.find(s => s.slot === next), origin = host.getBoundingClientRect();
+          card.querySelector('b')!.textContent = `${spotNumber(next)} · ${SPOTS[next]}`;
+          card.querySelector('small')!.textContent = sponsor ? `${sponsor.brand} · take over $${nextPrice(next, sponsor.amount) / 100}` : `Open · $${nextPrice(next) / 100}`;
+          card.style.left = `${pointer.x - origin.left}px`; card.style.top = `${pointer.y - origin.top}px`;
+          card.classList.add('is-visible');
+        };
         const down = (event: PointerEvent) => {start = {x:event.clientX, y:event.clientY}; moved = false;};
-        const move = (event: PointerEvent) => {if (Math.hypot(event.clientX-start.x, event.clientY-start.y)>6) moved = true;};
+        const move = (event: PointerEvent) => {
+          if (Math.hypot(event.clientX-start.x, event.clientY-start.y)>6) moved = true;
+          if (event.pointerType !== 'mouse' || event.buttons) {if (hovered >= 0) showHover(-1); return;}
+          pointer = {x: event.clientX, y: event.clientY};
+          // Body raycasts are costly, so hover picking is throttled rather than run on every pointer event.
+          if (hoverQueued) return; hoverQueued = true;
+          setTimeout(() => {hoverQueued = false; showHover(pick(pointer.x, pointer.y));}, 40);
+        };
+        const leave = () => showHover(-1);
         const click = (event: PointerEvent) => {
           if (moved) return;
-          const rect = renderer.domElement.getBoundingClientRect();
-          raycaster.setFromCamera(new THREE.Vector2((event.clientX-rect.left)/rect.width*2-1, -(event.clientY-rect.top)/rect.height*2+1), camera);
-          const visible = patches.filter((patch, n) => patch.visible && AVATAR_ANCHORS[n][4] * camera.position.z > .15);
-          const hit = raycaster.intersectObjects(visible, false)[0], occluder = raycaster.intersectObjects(body, false)[0];
-          if (hit && (!occluder || hit.distance <= occluder.distance + .006)) latest.current.onSelect(hit.object.userData.slot);
+          const slot = pick(event.clientX, event.clientY);
+          if (slot >= 0) latest.current.onSelect(slot, {x: event.clientX, y: event.clientY});
         };
         const end = () => {
           const state = latest.current, side = camera.position.z >= 0 ? 'front' : 'back';
@@ -205,6 +234,7 @@ export default function Arena(props: Props) {
         controls.addEventListener('end', end); controls.addEventListener('change', requestDraw);
         renderer.domElement.addEventListener('pointerdown', down);
         renderer.domElement.addEventListener('pointermove', move);
+        renderer.domElement.addEventListener('pointerleave', leave);
         renderer.domElement.addEventListener('pointerup', click);
         const resize = new ResizeObserver(update); resize.observe(host);
         document.addEventListener('visibilitychange', update);
@@ -213,7 +243,8 @@ export default function Arena(props: Props) {
         cleanup = () => {
           sync.current = null; cancelAnimationFrame(frame); resize.disconnect(); controls.dispose();
           document.removeEventListener('visibilitychange', update);
-          renderer.domElement.removeEventListener('pointerdown', down); renderer.domElement.removeEventListener('pointermove', move); renderer.domElement.removeEventListener('pointerup', click);
+          renderer.domElement.removeEventListener('pointerdown', down); renderer.domElement.removeEventListener('pointermove', move);
+          renderer.domElement.removeEventListener('pointerleave', leave); renderer.domElement.removeEventListener('pointerup', click);
           dispose(scene); slots.forEach(slot => slot.texture.dispose()); disposeEnvironment();
           renderer.dispose(); renderer.domElement.remove();
         };
@@ -227,6 +258,7 @@ export default function Arena(props: Props) {
     }
     void init(); return () => {cancelled = true; abort.abort(); cleanup();};
   }, [attempt]);
+  const loadingLabel = progress >= 95 ? 'Preparing your 3D view…' : 'Loading the race kit…';
   return <div ref={container} className="arena" aria-busy={status === 'loading'} data-state={status}>
     <div ref={frameBox} className="scene-frame" aria-hidden="true"/>
     {!props.capture && !posterGone && <picture>
@@ -235,8 +267,9 @@ export default function Arena(props: Props) {
       <img className="scene-poster" src="/scene-poster.webp" alt="Bhavya at a Bengaluru half-marathon start line" fetchPriority="high"/>
     </picture>}
     {status !== 'ready' && !props.capture && <div className="scene-loading" role="status">
-      {status === 'loading' ? <><span>{progress >= 95 ? 'Preparing your 3D view…' : 'Loading the race kit…'} {progress}%</span><progress aria-label="3D model loading" max="100" value={progress}/><button onClick={() => latest.current.onBrowse()}>Browse spots while it loads →</button></> : <><p>Explore the spots while the 3D view is unavailable.</p><button onClick={() => {setStatus('loading'); setProgress(0); setAttempt(n => n + 1);}}>Retry 3D</button><button onClick={() => latest.current.onBrowse()}>View spots →</button></>}
+      {status === 'loading' ? <><span className="t-shimmer" data-text={`${loadingLabel} ${progress}%`}>{loadingLabel} {progress}%</span><progress aria-label="3D model loading" max="100" value={progress}/><button onClick={() => latest.current.onBrowse()}>Browse spots while it loads →</button></> : <><p>Explore the spots while the 3D view is unavailable.</p><button onClick={() => {setStatus('loading'); setProgress(0); setAttempt(n => n + 1);}}>Retry 3D</button><button onClick={() => latest.current.onBrowse()}>View spots →</button></>}
     </div>}
+    <div ref={hoverCard} className="spot-hover" aria-hidden="true"><b/><small/></div>
     {props.selected >= 0 && <span className="sr-only">{SPOTS[props.selected]}, ${nextPrice(props.selected, props.sponsors.find(s => s.slot === props.selected)?.amount) / 100} USD.</span>}
   </div>;
 }

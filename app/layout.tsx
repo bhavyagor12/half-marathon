@@ -1,7 +1,7 @@
 import type {Metadata, Viewport} from 'next';
 import './globals.css';
 const title = 'Sponsor my slow run — Bhavya Gor';
-const description = '21.1 km. One slow runner. Your logo on my race kit. Bengaluru, 20 December 2026. Tee spots from $10 USD; premium shorts spot from $20 USD.';
+const description = '21.1 km. One slow runner. Your logo on my race kit. Bengaluru, 20 December 2026. Spots on my tee, forearms and quad from $10 USD; premium shorts spot from $20 USD.';
 export const metadata: Metadata = {
   metadataBase: new URL('https://half-marathon-nu.vercel.app'), title, description,
   openGraph: {title, description, type: 'website', url: '/', images: [{url:'/share.jpg', width:1200, height:630, alt:'Sponsor Bhavya’s slow run — Bengaluru, December 20, 2026'}]},

@@ -32,6 +32,16 @@ The public product name is **Sponsor my slow run**. Bhavya reconfirmed USD on Se
 - **HUD:** shoes moved to a bottom-left card on desktop and an inline link under the CTA on mobile. The creator photo has an X badge, the focus ring uses the ink colour, the loader sits away from the runner, and mobile controls stay hidden until the scene is ready.
 - **Assets:** `npm run capture:scene` (dev server running) photographs the bare scene with headless Chrome via `?capture` and regenerates `scene-poster.webp`, `scene-poster-mobile.webp` and `share.jpg`, so the poster matches the first 3D frame. The share card's offer is plain text rather than a button-like pill.
 
+## Supabase backend, domain and motion pass (September 12)
+
+- **Backend:** bids, orders, refund jobs, rate limits and logos moved from the Sites Worker (D1/R2) to Supabase. `supabase/migrations/20260912000000_slowrun_auction.sql` creates `slowrun_*` tables (RLS on, no public policies), three Postgres functions (`slowrun_hit_rate_limit`, `slowrun_reserve_slot`, `slowrun_award_payment`) that keep reservation and award atomic, and the `slowrun-logos` bucket. API routes run natively on Vercel; the old proxy is gone. `tests/auction.test.mjs` runs the real migration in PGlite. A daily Vercel cron retries pending refunds with `CRON_SECRET`.
+- **Payments and domain:** a Dodo brand "Sponsor My Slow Run" with a $10-minimum pay-what-you-want product and a webhook at `https://sponsormyslowrun.com/api/webhooks/dodo` (payment.succeeded, refund.succeeded, refund.failed). Cloudflare DNS points the apex (A 76.76.21.21) and `www` (CNAME cname.vercel-dns.com) at Vercel, DNS only. Local dev is plain `next dev` on port 3001 reading `.env.local`.
+- **Spot map:** chest, left/right chest, both forearms, upper/lower back, left quad, and the $20 butt spot. Forearm and quad anchors were placed by probing the model's skin texture; the avatar test now checks each spot hits shirt, skin or shorts as intended.
+- **Controls:** a compact vertical rail (horizontal on tablet/mobile) with a sliding Front/Back pill and icon toggles for zoom, spots, music and full screen, each with a tooltip and an icon swap.
+- **Music:** "Eye of the Tiger" via the official YouTube embed, on by default. Browsers block sound until a gesture, so it starts on the first tap/click/key; muting is remembered in localStorage.
+- **Motion (transitions.dev tokens):** header texts reveal, HUD rise-in, countdown seconds number pop-in, panel reveal with open/close asymmetry, list ↔ detail page slide, 40ms row stagger capped at six steps, learn-more chevrons, shimmer loading label, tooltip timing for rail and 3D spot hover cards, and press scales. Every animation has a reduced-motion guard.
+- **Delight:** clean warm-tinted spot stickers with hover highlight and a hover card, a small confetti burst when a spot is picked, and a two-sided confetti celebration once a sponsorship is confirmed.
+
 ## Local development
 
 Use Node 22. `npm run dev` serves the live source; the current requested server is on `http://localhost:3001` because port 3000 was occupied. `npm run build:vercel` stages shared files under ignored `.vercel-next`. Vercel deploys main and continues proxying payment/data routes to the existing Sites backend; do not remove that backend.

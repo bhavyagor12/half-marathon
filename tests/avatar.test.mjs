@@ -48,8 +48,9 @@ test('all nine sponsor decals hit the correct garment and contain surface geomet
     assert.ok(hit, `slot ${index} must hit the model`);
     const pixel = (Math.floor(hit.uv.y * info.height) * info.width + Math.floor(hit.uv.x * info.width)) * info.channels;
     const rgb = [...data.subarray(pixel, pixel + 3)];
-    if (index < 8) assert.ok(Math.min(...rgb) > 210, `slot ${index} must hit white shirt, got ${rgb}`);
-    else assert.ok(Math.max(...rgb) < 90, 'premium back slot must hit dark shorts');
+    const garment = ['shirt', 'shirt', 'shirt', 'skin', 'skin', 'shirt', 'shirt', 'skin', 'shorts'][index];
+    const kind = Math.min(...rgb) > 210 ? 'shirt' : Math.max(...rgb) < 90 ? 'shorts' : 'skin';
+    assert.equal(kind, garment, `slot ${index} must hit ${garment}, got ${rgb}`);
     const geometry = new DecalGeometry(hit.object, hit.point, new THREE.Euler(0, side === 1 ? 0 : Math.PI, 0), new THREE.Vector3(width, height, .22));
     assert.ok(geometry.getAttribute('position').count > 3, `slot ${index} must have decal triangles`);
     if (side === -1) {

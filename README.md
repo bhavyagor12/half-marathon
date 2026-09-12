@@ -8,7 +8,7 @@ Node 22.23+ and npm. `npm ci`, then `npm run dev`. `npm run build` emits the Clo
 
 ## Auction contract
 
-- Eight tee spots open at $10; the butt placement on the back of the shorts opens at $20.
+- Eight spots (chest, left/right chest, both forearms, upper/lower back, left quad) open at $10; the butt placement on the back of the shorts opens at $20.
 - Each accepted takeover doubles the price for that spot. Prices are integer USD cents, calculated on the server from the current owner.
 - Version checks and atomic 30-minute reservations prevent stale or parallel checkouts from replacing the wrong sponsor.
 - A signed webhook plus canonical Dodo payment retrieval confirms the currency, product, quantity, price excluding tax, and order identity before ownership changes.

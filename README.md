@@ -49,3 +49,9 @@ GitHub: https://github.com/bhavyagor12/half-marathon (branch `main`). Vercel pro
 `npm run build:vercel` creates an ignored `.vercel-next` app from the shared frontend and builds native Next.js for Vercel. `vercel.json` selects that output. This preserves the existing Cloudflare build for backend maintenance without duplicating product UI source.
 
 The Vercel API adapter forwards only the known sponsorship routes to the original Sites Worker, where D1, R2, webhook verification, bids, and refunds remain authoritative. It enforces same-origin writes, bounded bodies, timeout, and an explicit route allowlist. It is not a general-purpose proxy. Consequently, the Sites backend must remain deployed and publicly reachable. Do not delete it after the Vercel launch. Checkout remains disabled until the activation steps above are completed; set the backend's `SITE_URL` to the Vercel production domain before enabling payments.
+
+## Bengaluru race-start environment
+
+The scene represents an illustrative race-morning start corral for the Times Internet Half Marathon, Bengaluru, December 20, 2026. The official event page has not yet published the exact start venue, reporting time, or route. `app/RaceStart.ts` builds an original 3D asphalt avenue, truss start arch, timing mat, barriers, cones, flags, and instanced trees. Signage is original canvas typography naming the event; it is not a replica of a confirmed venue or an organizer endorsement. The story dialog links the official event and states that the setting is illustrative.
+
+Source: https://timesofindia.indiatimes.com/times-events/marathon/bengaluru/2026 (checked September 12, 2026). Update venue-specific details only after the organizer announces them.

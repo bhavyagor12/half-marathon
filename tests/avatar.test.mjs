@@ -26,12 +26,12 @@ const image = document.images[texture.extensions?.EXT_texture_webp?.source ?? te
 const view = document.bufferViews[image.bufferView];
 const {data, info} = await sharp(buffer.subarray(28 + jsonLength + view.byteOffset, 28 + jsonLength + view.byteOffset + view.byteLength)).raw().toBuffer({resolveWithObject: true});
 
-test('avatar is a textured volumetric GLB with Meshopt compression and embedded 2K color, within the web size budget', () => {
+test('avatar is a textured volumetric GLB with Meshopt compression and embedded 4K color, within the web size budget', () => {
   assert.equal(buffer.toString('ascii', 0, 4), 'glTF');
   assert.equal(buffer.readUInt32LE(4), 2);
   assert.equal(buffer.readUInt32LE(8), buffer.length);
-  assert.ok(buffer.length < 2_000_000);
-  assert.equal(info.width, 2048);
+  assert.ok(buffer.length < 5_000_000);
+  assert.equal(info.width, 4096);
   assert.ok(document.extensionsRequired.includes('EXT_meshopt_compression'));
   assert.ok(document.meshes[0].primitives[0].attributes.NORMAL !== undefined);
   assert.ok(document.meshes[0].primitives[0].attributes.TEXCOORD_0 !== undefined);

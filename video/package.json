@@ -1,0 +1,21 @@
+{
+  "name": "sponsormyslowrun-launch-video",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@remotion/cli": "^4.0.524",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "remotion": "^4.0.524"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "typescript": "^7.0.2"
+  },
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "record": "node scripts/record-app.mjs http://localhost:3002 && node scripts/record-app.mjs http://localhost:3002 --portrait",
+    "render": "node scripts/render.mjs",
+    "typecheck": "tsc --noEmit"
+  }
+}

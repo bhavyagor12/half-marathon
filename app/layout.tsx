@@ -3,7 +3,7 @@ import {SITE_ORIGIN} from '@/lib/config';
 import './globals.css';
 const name = 'Sponsor my slow run';
 const title = 'Sponsor my slow run — Bhavya Gor';
-const description = '21.1 km. One slow runner. Your logo on my race kit. Bengaluru, 20 December 2026. Spots on my tee, forearms and quad from $5 USD; the premium shorts spot from $20 USD.';
+const description = '21.1 km. One slow runner. Your logo on my race kit. Bengaluru, 20 December 2026. Spots on my tee, forearms and quad from $50 USD; the premium shorts spot from $100 USD.';
 // Bump the version whenever share.jpg changes: X, LinkedIn, Slack and WhatsApp cache link previews by image URL.
 const shareImage = {url: '/share.jpg?v=20260912-3', width: 1200, height: 630, type: 'image/jpeg', alt: 'Bhavya in his race kit at a Bengaluru start line with numbered sponsor spots, next to the words “Sponsor my slow run”'};
 export const metadata: Metadata = {

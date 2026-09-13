@@ -31,11 +31,12 @@ export default function Arena(props: Props) {
     async function init() {
       try {
         const THREE = await import('three');
-        const [{OrbitControls}, {GLTFLoader}, {DecalGeometry}, {MeshoptDecoder}] = await Promise.all([
+        const [{OrbitControls}, {GLTFLoader}, {DecalGeometry}, {MeshoptDecoder}, {RoomEnvironment}] = await Promise.all([
           import('three/examples/jsm/controls/OrbitControls.js'),
           import('three/examples/jsm/loaders/GLTFLoader.js'),
           import('three/examples/jsm/geometries/DecalGeometry.js'),
           import('three/examples/jsm/libs/meshopt_decoder.module.js'),
+          import('three/examples/jsm/environments/RoomEnvironment.js'),
         ]);
         const dispose = (root: Object3D) => {
           const textures = new Set<Texture>(), materials = new Set<Material>();
@@ -50,11 +51,11 @@ export default function Arena(props: Props) {
           textures.forEach(texture => texture.dispose()); materials.forEach(material => material.dispose());
         };
         // Fetch explicitly so download progress and cancellation work before GLB decoding.
-        const response = await fetch('/models/bhavya.glb?v=original-restored', {signal: abort.signal});
+        const response = await fetch('/models/bhavya.glb?v=original-polished', {signal: abort.signal});
         if (!response.ok) throw new Error('Avatar download failed');
         const reader = response.body?.getReader();
         const chunks: Uint8Array[] = []; let bytes = 0;
-        const total = Number(response.headers.get('content-length')) || 1710896;
+        const total = Number(response.headers.get('content-length')) || 4360948;
         if (reader) {
           while (true) {
             const {done, value} = await reader.read(); if (done) break;
@@ -72,7 +73,7 @@ export default function Arena(props: Props) {
         const camera = new THREE.PerspectiveCamera(35, 1, .1, 100);
         const renderer = new THREE.WebGLRenderer({antialias: true, alpha: false});
         cleanup = () => {dispose(scene); renderer.dispose(); renderer.domElement.remove();};
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1;
@@ -108,12 +109,23 @@ export default function Arena(props: Props) {
           camera.position.set(0, y, (view === 'back' ? -1 : 1) * distance);
           controls.update(); controls.enableDamping = true;
         };
-        scene.add(new THREE.HemisphereLight('#ffffff', '#838d80', 2));
+        scene.add(new THREE.HemisphereLight('#ffffff', '#838d80', 1.55));
         const key = new THREE.DirectionalLight('#fff3e4', 2.3); key.position.set(-3, 7, 5);
-        key.castShadow = true; key.shadow.mapSize.set(1024, 1024); key.shadow.normalBias = .025;
+        key.castShadow = true; key.shadow.mapSize.set(2048, 2048); key.shadow.normalBias = .015;
         scene.add(key);
-        const faceLight = new THREE.DirectionalLight('#ffffff', 2.1);
+        const faceLight = new THREE.DirectionalLight('#ffffff', .85);
         scene.add(faceLight, faceLight.target);
+        // Soft image-based light gives curved surfaces reflections and indirect shading.
+        // Apply it only to the avatar so the illustrated setting keeps its own materials.
+        const studio = new RoomEnvironment();
+        const pmrem = new THREE.PMREMGenerator(renderer);
+        const reflection = pmrem.fromScene(studio, .04, .1, 100, {size: 128});
+        studio.dispose(); pmrem.dispose();
+        cleanup = () => {dispose(scene); reflection.dispose(); renderer.dispose(); renderer.domElement.remove();};
+        key.shadow.camera.near = .5; key.shadow.camera.far = 20;
+        key.shadow.camera.updateProjectionMatrix();
+        key.shadow.bias = -.0001;
+
         const runner = gltf.scene;
         const bounds = new THREE.Box3().setFromObject(runner);
         const height = bounds.getSize(new THREE.Vector3()).y;
@@ -123,7 +135,18 @@ export default function Arena(props: Props) {
         runner.position.add(new THREE.Vector3(-center.x, AVATAR_GROUND - bounds.min.y, -center.z));
         runner.updateMatrixWorld(true);
         const body: Mesh[] = [];
-        runner.traverse(object => {if (object instanceof THREE.Mesh) {object.castShadow = true; object.receiveShadow = false; body.push(object);}});
+        runner.traverse(object => {if (object instanceof THREE.Mesh) {object.castShadow = true; object.receiveShadow = true; body.push(object);
+          for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+            if (material instanceof THREE.MeshStandardMaterial) {
+              // Reduce reconstruction-map sparkle on skin and fabric without changing the mesh.
+              material.metalness = 0; material.normalScale.setScalar(.3);
+              material.envMap = reflection.texture; material.envMapIntensity = .16;
+              for (const texture of [material.map, material.normalMap, material.roughnessMap]) {
+                if (texture) texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+              }
+            }
+          }
+        }});
         const environment = new THREE.Scene(); scene.add(environment);
         const disposeEnvironment = buildRaceStart(environment, THREE);
         scene.background = environment.background; scene.fog = environment.fog;
@@ -245,7 +268,7 @@ export default function Arena(props: Props) {
           document.removeEventListener('visibilitychange', update);
           renderer.domElement.removeEventListener('pointerdown', down); renderer.domElement.removeEventListener('pointermove', move);
           renderer.domElement.removeEventListener('pointerleave', leave); renderer.domElement.removeEventListener('pointerup', click);
-          dispose(scene); slots.forEach(slot => slot.texture.dispose()); disposeEnvironment();
+          dispose(scene); slots.forEach(slot => slot.texture.dispose()); disposeEnvironment(); reflection.dispose();
           renderer.dispose(); renderer.domElement.remove();
         };
         // Draw the first frame synchronously so the poster never gives way to an empty canvas.

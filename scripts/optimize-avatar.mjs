@@ -11,6 +11,6 @@ const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies(
 const input = new URL('../output/avatar/bhavya.glb', import.meta.url);
 const output = new URL('../public/models/bhavya.glb', import.meta.url);
 const document = await io.read(fileURLToPath(input));
-await document.transform(dedup(), prune(), textureCompress({encoder:sharp,targetFormat:'webp',resize:[2048,2048],quality:74}), meshopt({encoder:MeshoptEncoder,level:'high'}));
+await document.transform(dedup(), prune(), textureCompress({encoder:sharp,targetFormat:'webp',slots:/baseColorTexture/,resize:[4096,4096],quality:86}), textureCompress({encoder:sharp,targetFormat:'webp',slots:/^(?!baseColorTexture$)/,resize:[2048,2048],quality:82}), meshopt({encoder:MeshoptEncoder,level:'high'}));
 await io.write(fileURLToPath(output), document);
 console.log(`Compressed avatar: ${(await stat(output)).size} bytes`);

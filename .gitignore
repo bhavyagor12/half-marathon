@@ -47,3 +47,11 @@ yarn-error.log*
 
 # Private original face references and intermediate head reconstruction
 /output/avatar/head-v2/
+
+# Launch video: licensed music, third-party film frames, recordings and renders stay local.
+/video/node_modules/
+/video/public/audio/
+/video/public/frames/
+/video/public/footage/
+/video/public/app/
+/video/out/

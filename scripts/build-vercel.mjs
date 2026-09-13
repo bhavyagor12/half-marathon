@@ -5,7 +5,7 @@ await rm(stage,{recursive:true,force:true});
 await mkdir(new URL('lib/',stage),{recursive:true});
 // Stage only the Next.js app: UI plus the Supabase-backed API routes. Legacy Cloudflare Worker/Sites files stay out of the build.
 await cp(new URL('../app/',import.meta.url),new URL('app/',stage),{recursive:true,filter:source=>!source.endsWith('chatgpt-auth.ts')});
-for(const file of ['config.ts','avatar.mjs','server.ts','refunds.ts','refund-math.ts'])await cp(new URL(`../lib/${file}`,import.meta.url),new URL(`lib/${file}`,stage));
+for(const file of ['config.ts','avatar.mjs','server.ts','refunds.ts','refund-math.ts','wallet.ts','stats.ts'])await cp(new URL(`../lib/${file}`,import.meta.url),new URL(`lib/${file}`,stage));
 await cp(new URL('../public/',import.meta.url),new URL('public/',stage),{recursive:true});
 await cp(new URL('../postcss.config.mjs',import.meta.url),new URL('postcss.config.mjs',stage));
 await writeFile(new URL('package.json',stage),JSON.stringify({name:'slow-club-vercel',private:true,type:'module'}));

@@ -115,7 +115,7 @@ function SpotsScene({src}: {src: string | null}) {
   const portrait = usePortrait();
   const pop = (start: number) => interpolate(f, [start, start + 8], [0, 1], {...clamp, easing: Easing.out(Easing.back(1.4))});
   const first = pop(22) * interpolate(f, [BUTT_CLICK - 12, BUTT_CLICK - 4], [1, 0], clamp), second = pop(BUTT_CLICK + 3);
-  const card = (p: number, content: ReactNode) => <div style={{position: 'absolute', ...(portrait ? {left: 0, right: 0, top: 150, display: 'flex', justifyContent: 'center'} : {left: 120, top: 110}),
+  const card = (p: number, content: ReactNode) => <div style={{position: 'absolute', ...(portrait ? {left: 0, right: 0, top: 270, display: 'flex', justifyContent: 'center'} : {left: 120, top: 110}),
     opacity: p, transform: `translateY(${(1 - p) * 24}px) scale(${.92 + p * .08})`, transformOrigin: portrait ? '50% 0' : '0 0'}}>
     <div style={{background: PAPER, borderRadius: 26, padding: portrait ? '30px 42px' : '28px 40px', boxShadow: '0 24px 70px rgba(39,53,46,.3)', fontFamily: SANS, color: INK, textAlign: portrait ? 'center' : 'left'}}>{content}</div>
   </div>;
@@ -148,7 +148,8 @@ function EndCard({scene}: {scene: string | null}) {
     {scene && <Img src={staticFile(scene)} style={{position: 'absolute', objectFit: 'cover', transform: `scale(${drift})`, ...(portrait
       ? {left: 0, top: 0, width: '100%', height: '62%', objectPosition: '50% 40%', WebkitMaskImage: 'linear-gradient(180deg, #000 62%, transparent)'}
       : {right: 0, top: 0, width: '62%', height: '100%', objectPosition: '50% 50%', WebkitMaskImage: 'linear-gradient(90deg, transparent, #000 38%)'})}}/>}
-    <div style={{position: 'absolute', ...(portrait ? {left: 80, right: 80, bottom: 170} : {left: 140, top: 0, bottom: 0, width: 900, display: 'flex', flexDirection: 'column', justifyContent: 'center'})}}>
+    {/* Portrait keeps the copy above Reels' caption and action buttons. */}
+    <div style={{position: 'absolute', ...(portrait ? {left: 80, right: 180, bottom: 420} : {left: 140, top: 0, bottom: 0, width: 900, display: 'flex', flexDirection: 'column', justifyContent: 'center'})}}>
       {line(0, 'BHAVYA GOR · 21.1 KM · BENGALURU', {fontFamily: MONO, fontSize: portrait ? 30 : 26, letterSpacing: 3, color: MUTED})}
       {line(1, 'Sponsor my slow run.', {fontSize: portrait ? 124 : 128, fontWeight: 700, letterSpacing: -5, lineHeight: .95, marginTop: 26})}
       {line(2, 'Your logo on my race kit · from $50', {fontSize: portrait ? 44 : 42, color: ACCENT, fontWeight: 600, marginTop: 30})}

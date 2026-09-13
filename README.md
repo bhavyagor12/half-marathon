@@ -34,6 +34,27 @@ The public preview can accept email enquiries while checkout is closed. GTA Bidâ
 
 The fee lookup and refund math follow the official [balance ledger](https://docs.dodopayments.com/api-reference/balance-ledger/list-ledger-entries) and [refund API](https://docs.dodopayments.com/api-reference/refunds/post-refunds). Actual provider payment/refund tests remain outstanding because this projectâ€™s Dodo configuration is missing.
 
+## Stablecoin payments and refund wallets
+
+Dodo's Stablecoins payment method (`crypto_currency`, USD-billed, one-time, not offered to buyers in India) is enabled on the live business. Dodo's refund API takes only a payment ID, amount and metadata, with no destination wallet, and a stablecoin payment may come from a one-time wallet. So the app keeps its own refund wallet per order:
+
+- The spot form offers **Card or local method** or **Stablecoin**. A stablecoin bid must include a refund network (Base, Ethereum, Polygon, Solana), a validated address and an "I control this wallet" confirmation; its Dodo checkout is limited to `crypto_currency`. Card bids are unrestricted.
+- The payment webhook stores Dodo's payment method on the order. A stablecoin payment made from the card path (or without a wallet) can add one later from the sponsor's browser (`POST /api/refund-wallet`).
+- Refund amounts are frozen exactly as for cards (actual Dodo payment fees deducted for outbid refunds). Stablecoin refunds then leave the automatic queue: `awaiting_wallet` until the payer gives a wallet, then `awaiting_payout` with the wallet snapshotted. Once a payout is queued the wallet is locked.
+- Operator payout: `GET /api/admin/payouts` with `Authorization: Bearer REFUND_JOB_KEY` lists amounts, networks and addresses. Send the USDC, then `POST /api/admin/payouts` with `{"payment": "<Dodo payment id>", "reference": "<transaction hash>"}`. The sponsor sees the refund as sent with an explorer link. The cron secret cannot mark payouts.
+- If Dodo confirms that API refunds for `crypto_currency` payments reach the payer, set `DODO_STABLECOIN_API_REFUNDS=true` to send them through Dodo instead (the wallet is attached as refund metadata).
+
+Apply `supabase/apply/2026-09-13-production.sql` in the Supabase SQL Editor before deploying this code (it also adds the right quad, slot ID 9). The SQL keeps the old reservation function, so the currently deployed app keeps working until the new code ships.
+
+## Views, visitors and online now
+
+The HUD under the countdown shows total views, unique visitors and people online now (`app/VisitorStats.tsx`).
+
+- Each page load from a real browser calls `POST /api/visit` once: one view, plus one visitor the first time a browser's random id (kept in localStorage, hashed on the server) is seen. No IPs or user agents are stored. Crawlers and link unfurlers, requests over 20 per minute per IP, localhost, `?capture` renders and automated browsers are not counted.
+- Online now is sessions with a heartbeat in the last 75 seconds. Visible tabs send `POST /api/presence` every 30 seconds with a session token signed by the server (HMAC derived from the service role key), so the count can't be inflated with invented sessions. Hiding or closing the tab removes the session immediately.
+- `GET /api/stats` returns the totals without counting (cached for 15 seconds).
+- Storage is `slowrun_stats`, `slowrun_visitors` and `slowrun_presence` (migration `20260913010000_slowrun_visits.sql`, included in `supabase/apply/2026-09-13-production.sql`).
+
 ## Assets and follow-up
 
 The website uses the original textured Meshy avatar at `public/models/bhavya.glb` (about 4.36 MB, Meshopt compression, original 4K color and 2K normal/roughness textures), restored at the user's request after comparing the newer head reconstruction. It supports full orbit and ten surface-projected sponsor decals. The shadow/orbit fix and both quad spots remain enabled.

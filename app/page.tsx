@@ -6,6 +6,7 @@ import KitDiagram from './KitDiagram';
 import MusicToggle from './MusicToggle';
 import RailButton from './RailButton';
 import SponsorForm from './SponsorForm';
+import VisitorStats from './VisitorStats';
 import {AVATAR_ANCHORS} from '@/lib/avatar.mjs';
 import {RACE_DATE, SPOTS, nextPrice, type Sponsor} from '@/lib/config';
 
@@ -115,6 +116,7 @@ export default function Home() {
     <div className="countdown hud" aria-label={remaining ? `${remaining[0]} days until race day` : 'Race day is December 20, 2026'}>
       <span>Race day in</span><strong>{['d','h','m'].map((unit, i) => <span key={unit}>{remaining ? String(remaining[i]).padStart(2, '0') : '—'}<small>{unit}</small></span>)}<span>{seconds ? <span key={seconds} className="t-digit-group is-animating">{seconds.split('').map((digit, k) => <span key={k} className="t-digit" data-stagger={k === 1 ? '1' : undefined}>{digit}</span>)}</span> : '—'}<small>s</small></span></strong>
     </div>
+    <VisitorStats/>
     <nav className="scene-rail hud" aria-label="3D view controls">
       <div className="rail-views" role="group" aria-label="Runner side" data-view={view}>
         <span className="rail-pill" aria-hidden="true"/>

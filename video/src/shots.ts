@@ -2,7 +2,7 @@
 export type Cut = {beats: number; from: number; to: number; title?: string; text?: string};
 
 /**
- * Beats 0–32, in play order. Cuts with a title or text blur the clip's own caption and show ours instead;
+ * The opening footage, in play order (keep the total on a whole bar so the app drops on the downbeat). Cuts with a title or text blur the clip's own caption and show ours instead;
  * the rest keep their original burned-in line.
  */
 export const FOOTAGE_CUTS: Cut[] = [
@@ -11,7 +11,6 @@ export const FOOTAGE_CUTS: Cut[] = [
   {beats: 8, from: 72.39, to: 75.5}, // you can't let anybody tell you / you can't do something (stops before "I'll repeat that")
   {beats: 4, from: 67.91, to: 69.17}, // but if you want something bad enough
   {beats: 4, from: 7.45, to: 9.2}, // something in you has to wake up
-  {beats: 4, from: 108.25, to: 109.5}, // hero of your own movie (beach legs)
   {beats: 2, from: 389.2, to: 390.3, text: 'Bengaluru · 20 December · 21.1 km'}, // runner on the bridge
   {beats: 2, from: 48.3, to: 49.05, text: 'Slow runner. Long exposure.'}, // runner on a night street
 ];

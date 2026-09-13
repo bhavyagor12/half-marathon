@@ -2,7 +2,7 @@ import type {CSSProperties, ReactNode} from 'react';
 import {AbsoluteFill, Audio, Easing, Img, OffthreadVideo, Sequence, interpolate, random, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
 import './fonts';
 import {BUTT_CLICK, FOOTAGE_CUTS, SPOTS_TRIM, STICKERS, type Cut} from './shots';
-import {DURATION, FPS, beat} from './timeline';
+import {APP_BEAT, DURATION, FPS, beat} from './timeline';
 
 export type LaunchProps = {
   footage: string | null;
@@ -172,15 +172,15 @@ export function Launch(props: LaunchProps) {
         {cut.title ? <Line title>{cut.title}</Line> : cut.text ? <Line>{cut.text}</Line> : null}
       </FootageCut>
     </Beats>)}
-    <Sequence durationInFrames={beat(32)}>
+    <Sequence durationInFrames={beat(APP_BEAT)}>
       <Grain/>
       <AbsoluteFill style={{background: 'radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,.5) 100%)'}}/>
     </Sequence>
 
-    <Beats from={32} beats={6}><AppClip src={app.orbit} trim={.4} label="app orbit.mp4"/><Flash/></Beats>
-    {STICKERS.map((sticker, i) => <Beats key={sticker.number} from={38 + i * 2} beats={2}><StickerZoom src={stills[sticker.still]} sticker={sticker}/></Beats>)}
-    <Beats from={44} beats={8}><SpotsScene src={app.spots}/><Flash frames={4}/></Beats>
-    <Beats from={52} beats={4}><CountdownScene days={props.daysToRace}/></Beats>
-    <Beats from={56} beats={8}><EndCard scene={props.scene}/></Beats>
+    <Beats from={APP_BEAT} beats={6}><AppClip src={app.orbit} trim={.4} label="app orbit.mp4"/><Flash/></Beats>
+    {STICKERS.map((sticker, i) => <Beats key={sticker.number} from={APP_BEAT + 6 + i * 2} beats={2}><StickerZoom src={stills[sticker.still]} sticker={sticker}/></Beats>)}
+    <Beats from={APP_BEAT + 12} beats={8}><SpotsScene src={app.spots}/><Flash frames={4}/></Beats>
+    <Beats from={APP_BEAT + 20} beats={4}><CountdownScene days={props.daysToRace}/></Beats>
+    <Beats from={APP_BEAT + 24} beats={8}><EndCard scene={props.scene}/></Beats>
   </AbsoluteFill>;
 }

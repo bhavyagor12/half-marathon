@@ -8,7 +8,7 @@ Node 22.23+ and npm. `npm ci`, then `npm run dev`. `npm run build` emits the Clo
 
 ## Auction contract
 
-- All regular spots open at $50 USD; the premium butt spot opens at $100 USD. Subsequent takeovers double the existing paid amount. The Dodo product minimum must stay at or below $50.
+- Opening bids are priced by visibility: quads $120 USD; left chest, right chest and forearms $150 USD; centre front chest, upper back and lower back $250 USD; the premium butt spot $500 USD. Selling every spot once raises $2,090, about $2,000 after payment fees (the goal); takeovers add more. Subsequent takeovers double the existing paid amount. The Dodo product minimum must stay at or below $120.
 - Each accepted takeover doubles the price for that spot. Prices are integer USD cents, calculated on the server from the current owner.
 - Version checks and atomic 30-minute reservations prevent stale or parallel checkouts from replacing the wrong sponsor.
 - A signed webhook plus canonical Dodo payment retrieval confirms the currency, product, quantity, price excluding tax, and order identity before ownership changes.
@@ -81,6 +81,6 @@ The scene represents an illustrative race-morning start corral for the Times Int
 
 Source: https://timesofindia.indiatimes.com/times-events/marathon/bengaluru/2026 (checked September 12, 2026). Update venue-specific details only after the organizer announces them.
 
-The other quad is slot ID 9 (displayed as spot 10), priced at $50 USD. Apply migrations `20260912010000_expand_spot_ids.sql` and `20260912010100_seed_right_quad.sql` before deploying this addition. Existing IDs and owners are preserved. The camera orbits a fixed road and sun so the scene and cast shadows remain consistent.
+The other quad is slot ID 9 (displayed as spot 10), priced at $120 USD. Apply migrations `20260912010000_expand_spot_ids.sql` and `20260912010100_seed_right_quad.sql` before deploying this addition. Existing IDs and owners are preserved. The camera orbits a fixed road and sun so the scene and cast shadows remain consistent.
 
 Rendering polish keeps the original mesh: DPR capped at 2, up to 8× anisotropic filtering, reduced normal-map strength (0.3), nonmetallic skin/fabric, reduced camera fill, subtle prefiltered environment reflections, self-shadowing and 2048px shadow maps. `scripts/optimize-avatar.mjs` reproduces the asset from the original master without AI generation.

@@ -129,7 +129,7 @@ export default function Home() {
       <RailButton className="fullscreen" label="Full screen" onClick={() => {if (document.fullscreenElement) void document.exitFullscreen(); else void document.documentElement.requestFullscreen?.();}}><FullscreenIcon/></RailButton>
     </nav>
     <div className="main-action hud">
-      <button className="primary t-learn" onClick={() => open('spots')}>{error ? 'Explore sponsorship spots' : !loaded ? 'View spots · from $50 USD' : openCount ? `View ${openCount} open spots · from $50 USD` : 'View sponsors · take over a spot'}<Chevron/></button>
+      <button className="primary t-learn" onClick={() => open('spots')}>{error ? 'Explore sponsorship spots' : !loaded ? 'View spots · from $120 USD' : openCount ? `View ${openCount} open spots · from $120 USD` : 'View sponsors · take over a spot'}<Chevron/></button>
       <small><span className="desktop-hint">Drag to rotate · Scroll to zoom</span><span className="touch-hint"><span className="rotate-hint">Drag to rotate · </span>Pinch to zoom</span><span className="mobile-shoes"> · <button className="hint-shoes" onClick={() => open('shoes')}>Sponsor my shoes →</button></span></small>
     </div>
     <button className="shoe-cta hud t-learn" onClick={() => open('shoes')}><small>Make running shoes?</small><span>Sponsor my shoes <Chevron/></span></button>
@@ -138,7 +138,7 @@ export default function Home() {
       <div className="panel-heading"><div><span className="eyebrow">{eyebrow}</span><h1 id="panel-title" tabIndex={-1} data-panel-focus>{title}</h1></div><button className="close" aria-label="Close panel" title="Close (Esc)" onClick={close}>×</button></div>
       <div className="panel-content"><div key={`${panel}-${selected}`} className="panel-swap">
         {panel === 'spots' && <>
-          <p className="panel-intro">Your logo on my race kit: chest, back, forearms and quads from $50 USD; the premium butt spot from $100. Each takeover doubles the price.</p>
+          <p className="panel-intro">Your logo on my race kit: quads from $120 USD, chest, forearm and back spots $150–$250, and the premium butt spot $500. Each takeover doubles the price.</p>
           {error && <p role="status">Live availability is unavailable. <button className="text-button" onClick={reload}>Try again</button></p>}
           <div className="spot-list">{SPOTS.map((name,n) => {
             const sponsor = sponsors.find(s => s.slot === n), price = nextPrice(n, sponsor?.amount) / 100;
@@ -165,11 +165,11 @@ export default function Home() {
           <p>No six-pack. No elite pace. Just showing up. The slower I go, the longer your logo’s out there.</p>
           <ul className="benefits"><li>Your logo on my race tee, shorts, forearms or quad.</li><li>Your brand and website on this page.</li><li>A mention in my race recap on X.</li></ul>
           <p>Your support goes toward running gear, nutrition, supplements, and recovery. I’ll share the purchases and progress along the way.</p>
-          <button className="primary t-learn" onClick={() => open('spots')}>Find your spot · from $50 USD<Chevron/></button>
+          <button className="primary t-learn" onClick={() => open('spots')}>Find your spot · from $120 USD<Chevron/></button>
           <a className="contact" href={`mailto:${EMAIL}`}>Email me</a><button className="text-button terms-link" onClick={() => open('rules')}>Sponsorship terms & privacy</button>
         </>}
         {panel === 'rules' && <div id="rules">
-          <h2>The auction</h2><p>All chest, back, forearm and quad spots start at $50 USD. The premium butt spot on the back of the shorts starts at $100 USD. Each takeover doubles that spot’s price. Any checkout taxes are shown before payment. The sponsor holding the spot when bidding closes gets the race-day placement: printed on the kit, or a temporary tattoo on skin spots.</p>
+          <h2>The auction</h2><p>Opening bids are priced by how visible each spot is: quads $120 USD; left chest, right chest and forearms $150 USD; the centre front chest, upper back and lower back $250 USD; and the premium butt spot on the back of the shorts $500 USD. Each takeover doubles that spot’s price. Any checkout taxes are shown before payment. The sponsor holding the spot when bidding closes gets the race-day placement: printed on the kit, or a temporary tattoo on skin spots.</p>
           <h2>Takeovers & refunds</h2><p>If another sponsor takes over your spot, your payment is refunded minus the actual payment-processing fees charged by Dodo Payments. Any additional refund-processing fees are covered by Bhavya. This is not a full-refund auction.</p>
           <p>Payment confirmation updates ownership. Overlapping payments that cannot be fulfilled are submitted for a full refund. If I can’t race or fulfil your placement, I’ll arrange a full refund.</p>
           <h2>Race-day placement</h2><p>Logos lock on December 10, 2026 (India time), for printing. Placement dimensions will be confirmed before printing. Contact me before printing for any other change or refund request. Upload only logos you have permission to use.</p>

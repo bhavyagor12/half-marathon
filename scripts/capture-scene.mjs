@@ -64,7 +64,7 @@ const copy = Buffer.from(`<svg width="1200" height="630" xmlns="http://www.w3.or
     <text x="60" y="340" font-size="72" font-weight="700" letter-spacing="-2">slow run.</text>
     <text x="64" y="398" font-size="28" fill="#505c52">Slow runner. Long exposure.</text>
     <text x="64" y="470" font-size="24">Bengaluru · 20 December 2026</text>
-    <text x="64" y="512" font-size="24" font-weight="700" fill="#a8371e">Your logo on my race kit · from $50 USD</text>
+    <text x="64" y="512" font-size="24" font-weight="700" fill="#a8371e">Your logo on my race kit · from $120 USD</text>
   </g>
 </svg>`);
 await sharp({create: {width: 1200, height: 630, channels: 3, background: '#f7f2e8'}})

@@ -34,11 +34,15 @@ test('the public anon role cannot read or write auction tables',async()=>{const 
 async function sourceModule(path){const js=ts.transpileModule(readFileSync(new URL(path,import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext}}).outputText;return import(`data:text/javascript;base64,${Buffer.from(js).toString('base64')}`);}
 const {nextPrice}=await sourceModule('../lib/config.ts');
 const {refundAfterFees}=await sourceModule('../lib/refund-math.ts');
-test('regular spots open at $50, the butt at $100, and takeovers double paid amounts',()=>{
-  assert.deepEqual(Array.from({length:10},(_,n)=>nextPrice(n)),[5000,5000,5000,5000,5000,5000,5000,5000,10000,5000]);
-  assert.equal(nextPrice(3,5000),10000);
-  assert.equal(nextPrice(8,10000),20000);
-  assert.equal(nextPrice(8,20000),40000);
+test('opening bids are priced by visibility from $120, the butt is the $500 premium spot, and takeovers double paid amounts',()=>{
+  const opening=Array.from({length:10},(_,n)=>nextPrice(n));
+  assert.deepEqual(opening,[25000,15000,15000,15000,15000,25000,25000,12000,50000,12000]);
+  assert.equal(opening.reduce((sum,price)=>sum+price,0),209000);
+  assert.equal(Math.min(...opening),12000);
+  assert.equal(Math.max(...opening),nextPrice(8));
+  assert.equal(nextPrice(3,12000),24000);
+  assert.equal(nextPrice(8,50000),100000);
+  assert.equal(nextPrice(8,100000),200000);
   // Existing paid ownership keeps its established doubling rule.
   assert.equal(nextPrice(3,500),1000);
 });

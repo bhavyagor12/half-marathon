@@ -13,9 +13,9 @@ export const FOOTAGE_CUTS: Cut[] = [
 
 /** Sticker punch-ins on the 2× landscape stills. x/y are fractions of the still. */
 export const STICKERS = [
-  {number: '01', name: 'Front chest', price: '$50', still: 'closeup', x: .5, y: .509, zoom: {landscape: 2.3, portrait: 1.9}},
-  {number: '04', name: 'Left forearm', price: '$50', still: 'closeup', x: .409, y: .64, zoom: {landscape: 2.6, portrait: 2.4}},
-  {number: '08', name: 'Left quad', price: '$50', still: 'scene', x: .474, y: .66, zoom: {landscape: 3.4, portrait: 2.8}},
+  {number: '01', name: 'Front chest', price: '$250', still: 'closeup', x: .5, y: .509, zoom: {landscape: 2.3, portrait: 1.9}},
+  {number: '04', name: 'Left forearm', price: '$150', still: 'closeup', x: .409, y: .64, zoom: {landscape: 2.6, portrait: 2.4}},
+  {number: '08', name: 'Left quad', price: '$120', still: 'scene', x: .474, y: .66, zoom: {landscape: 3.4, portrait: 2.8}},
 ] as const;
 
 /** Seconds trimmed from the start of spots.mp4, and frames into that section where the butt spot is clicked (3.7s recorded). */

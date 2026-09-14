@@ -122,8 +122,8 @@ function SpotsScene({src}: {src: string | null}) {
   const big: CSSProperties = {fontSize: portrait ? 82 : 92, fontWeight: 700, letterSpacing: -3, lineHeight: 1};
   return <AbsoluteFill>
     <AppClip src={src} trim={SPOTS_TRIM} label="app spots.mp4"/>
-    {card(first, <div style={big}>From <span style={{color: ACCENT}}>$50</span>.</div>)}
-    {card(second, <><div style={big}>The butt spot: <span style={{color: ACCENT}}>$100</span>.</div><div style={{fontSize: portrait ? 38 : 36, color: MUTED, marginTop: 14}}>Every takeover doubles the price.</div></>)}
+    {card(first, <div style={big}>From <span style={{color: ACCENT}}>$120</span>.</div>)}
+    {card(second, <><div style={big}>The butt spot: <span style={{color: ACCENT}}>$500</span>.</div><div style={{fontSize: portrait ? 38 : 36, color: MUTED, marginTop: 14}}>Every takeover doubles the price.</div></>)}
   </AbsoluteFill>;
 }
 
@@ -152,7 +152,7 @@ function EndCard({scene}: {scene: string | null}) {
     <div style={{position: 'absolute', ...(portrait ? {left: 80, right: 180, bottom: 420} : {left: 140, top: 0, bottom: 0, width: 900, display: 'flex', flexDirection: 'column', justifyContent: 'center'})}}>
       {line(0, 'BHAVYA GOR · 21.1 KM · BENGALURU', {fontFamily: MONO, fontSize: portrait ? 30 : 26, letterSpacing: 3, color: MUTED})}
       {line(1, 'Sponsor my slow run.', {fontSize: portrait ? 124 : 128, fontWeight: 700, letterSpacing: -5, lineHeight: .95, marginTop: 26})}
-      {line(2, 'Your logo on my race kit · from $50', {fontSize: portrait ? 44 : 42, color: ACCENT, fontWeight: 600, marginTop: 30})}
+      {line(2, 'Your logo on my race kit · from $120', {fontSize: portrait ? 44 : 42, color: ACCENT, fontWeight: 600, marginTop: 30})}
       {line(3, <span style={{display: 'inline-block', background: INK, color: PAPER, borderRadius: 999, padding: portrait ? '24px 40px' : '22px 38px', fontSize: portrait ? 50 : 46, fontWeight: 600, letterSpacing: -1}}>sponsormyslowrun.com</span>, {marginTop: 48})}
       {line(4, '@bhavya_gor on X', {fontSize: portrait ? 34 : 30, color: MUTED, marginTop: 30})}
     </div>

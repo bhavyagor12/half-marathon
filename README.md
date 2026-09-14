@@ -47,6 +47,17 @@ Dodo's Stablecoins payment method (`crypto_currency`, USD-billed, one-time, not 
 
 Apply `supabase/apply/2026-09-13-production.sql` in the Supabase SQL Editor before deploying this code (it also adds the right quad, slot ID 9). The SQL keeps the old reservation function, so the currently deployed app keeps working until the new code ships.
 
+## USDC on Base (Base Pay)
+
+Sponsors can pay onchain in USDC on Base instead of Dodo. It is enabled when `BASE_PAY_RECIPIENT` is set (`BASE_PAY_TESTNET=true` for Base Sepolia).
+
+- **Checkout:** `POST /api/checkout` with `payWith: "base"` reserves the spot like any bid and gives the order an exact USDC amount: its price plus a random sub-cent tag (e.g. `250.004321`). Pending orders never share an amount. The browser then opens Base Pay (`pay()` from `@base-org/account`) straight from the "Pay with Base Pay" click, so the popup is allowed.
+- **Verification:** the browser posts Base Pay's payment id to `POST /api/base-payment`. The server links the id to the order (each id can settle one order only) and verifies it with `getPaymentStatus`, using the order's exact amount and our recipient from the database. A payment made for another order cannot match. It then runs the same atomic award as card payments (`slowrun_award_base_payment`) and records the paying wallet as the refund destination. `/api/order` polling and the daily cron re-check payments still confirming. Closing Base Pay without paying releases the hold.
+- **Refunds:** Base payments are refunded in full (no processor fee) to the wallet that paid, taken from the verified transfer, never from the browser.
+  - **Automatic** (CDP keys set): the refund is claimed, sent from the CDP server wallet account `CDP_REFUND_ACCOUNT` (which must be the `BASE_PAY_RECIPIENT` address and hold a little ETH on Base for gas), its transaction hash stored, then confirmed. A send is never repeated automatically; an error after claiming marks the job `failed` for review.
+  - **Manual** (no CDP keys): the refund waits in `GET /api/admin/payouts`. Send the USDC, then `POST /api/admin/payouts` with the transaction hash.
+- Apply `supabase/apply/2026-09-14-base-pay.sql` before deploying.
+
 ## Views, visitors and online now
 
 The HUD under the countdown shows total views, unique visitors and people online now (`app/VisitorStats.tsx`).

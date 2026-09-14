@@ -16,6 +16,8 @@
     "capture:scene": "node scripts/capture-scene.mjs"
   },
   "dependencies": {
+    "@base-org/account": "^2.5.10",
+    "@coinbase/cdp-sdk": "^1.55.0",
     "@supabase/supabase-js": "^2.116.0",
     "dodopayments": "^2.50.0",
     "drizzle-orm": "0.45.2",
@@ -23,6 +25,7 @@
     "react": "19.2.6",
     "react-dom": "19.2.6",
     "three": "^0.186.0",
+    "viem": "^2.56.5",
     "zod": "^4.6.2"
   },
   "devDependencies": {

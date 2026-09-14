@@ -7,6 +7,7 @@ import MusicToggle from './MusicToggle';
 import RailButton from './RailButton';
 import SponsorForm from './SponsorForm';
 import VisitorStats from './VisitorStats';
+import GoalProgress from './GoalProgress';
 import {AVATAR_ANCHORS} from '@/lib/avatar.mjs';
 import {RACE_DATE, SPOTS, nextPrice, type Sponsor} from '@/lib/config';
 
@@ -117,6 +118,7 @@ export default function Home() {
       <span>Race day in</span><strong>{['d','h','m'].map((unit, i) => <span key={unit}>{remaining ? String(remaining[i]).padStart(2, '0') : '—'}<small>{unit}</small></span>)}<span>{seconds ? <span key={seconds} className="t-digit-group is-animating">{seconds.split('').map((digit, k) => <span key={k} className="t-digit" data-stagger={k === 1 ? '1' : undefined}>{digit}</span>)}</span> : '—'}<small>s</small></span></strong>
     </div>
     <VisitorStats/>
+    <GoalProgress sponsors={sponsors} loaded={loaded && !error}/>
     <nav className="scene-rail hud" aria-label="3D view controls">
       <div className="rail-views" role="group" aria-label="Runner side" data-view={view}>
         <span className="rail-pill" aria-hidden="true"/>
@@ -139,6 +141,7 @@ export default function Home() {
       <div className="panel-content"><div key={`${panel}-${selected}`} className="panel-swap">
         {panel === 'spots' && <>
           <p className="panel-intro">Your logo on my race kit: quads from $120 USD, chest, forearm and back spots $150–$250, and the premium butt spot $500. Each takeover doubles the price.</p>
+          <GoalProgress sponsors={sponsors} loaded={loaded && !error} variant="panel"/>
           {error && <p role="status">Live availability is unavailable. <button className="text-button" onClick={reload}>Try again</button></p>}
           <div className="spot-list">{SPOTS.map((name,n) => {
             const sponsor = sponsors.find(s => s.slot === n), price = nextPrice(n, sponsor?.amount) / 100;
@@ -169,7 +172,7 @@ export default function Home() {
           <a className="contact" href={`mailto:${EMAIL}`}>Email me</a><button className="text-button terms-link" onClick={() => open('rules')}>Sponsorship terms & privacy</button>
         </>}
         {panel === 'rules' && <div id="rules">
-          <h2>The auction</h2><p>Opening bids are priced by how visible each spot is: quads $120 USD; left chest, right chest and forearms $150 USD; the centre front chest, upper back and lower back $250 USD; and the premium butt spot on the back of the shorts $500 USD. Each takeover doubles that spot’s price. Any checkout taxes are shown before payment. The sponsor holding the spot when bidding closes gets the race-day placement: printed on the kit, or a temporary tattoo on skin spots.</p>
+          <h2>The auction</h2><p>Opening bids are priced by how visible each spot is: quads $120 USD; left chest, right chest and forearms $150 USD; the centre front chest, upper back and lower back $250 USD; and the premium butt spot on the back of the shorts $500 USD. Each takeover doubles that spot’s price. Any checkout taxes are shown before payment. Bidding closes on September 21, 2026 at 11:59 PM India time; the sponsor holding the spot then gets the race-day placement: printed on the kit, or a temporary tattoo on skin spots.</p>
           <h2>Takeovers & refunds</h2><p>If another sponsor takes over your spot, your payment is refunded minus the actual payment-processing fees charged by Dodo Payments. Any additional refund-processing fees are covered by Bhavya. This is not a full-refund auction.</p>
           <p>Payment confirmation updates ownership. Overlapping payments that cannot be fulfilled are submitted for a full refund. If I can’t race or fulfil your placement, I’ll arrange a full refund.</p>
           <h2>Race-day placement</h2><p>Logos lock on December 10, 2026 (India time), for printing. Placement dimensions will be confirmed before printing. Contact me before printing for any other change or refund request. Upload only logos you have permission to use.</p>

@@ -32,7 +32,12 @@ test('rate limit counts requests in a window and expires old keys',async()=>{con
 test('the public anon role cannot read or write auction tables',async()=>{const db=await setup();await db.exec('set role anon');await assert.rejects(db.query('select * from slowrun_orders'));await assert.rejects(db.query('update slowrun_slots set owner_id=null'));await assert.rejects(db.query("select public.slowrun_award_payment('a','p',1,2)"));});
 
 async function sourceModule(path){const js=ts.transpileModule(readFileSync(new URL(path,import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext}}).outputText;return import(`data:text/javascript;base64,${Buffer.from(js).toString('base64')}`);}
-const {nextPrice}=await sourceModule('../lib/config.ts');
+const {nextPrice,FUNDING_GOAL,CLOSE_DATE,LOGO_LOCK_DATE,RACE_DATE}=await sourceModule('../lib/config.ts');
+test('the goal is every spot sold once, and bidding closes before logos lock and before race day',()=>{
+  assert.equal(FUNDING_GOAL,209000);
+  assert.equal(new Date(CLOSE_DATE).toISOString(),'2026-09-21T18:29:59.000Z');
+  assert.ok(Date.parse(CLOSE_DATE)<Date.parse(LOGO_LOCK_DATE)&&Date.parse(LOGO_LOCK_DATE)<Date.parse(RACE_DATE));
+});
 const {refundAfterFees}=await sourceModule('../lib/refund-math.ts');
 test('opening bids are priced by visibility from $120, the butt is the $500 premium spot, and takeovers double paid amounts',()=>{
   const opening=Array.from({length:10},(_,n)=>nextPrice(n));

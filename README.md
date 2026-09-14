@@ -16,7 +16,8 @@ Node 22.23+ and npm. `npm ci`, then `npm run dev`. `npm run build` emits the Clo
 - Outbid refund = original total charged including taxes minus Dodo’s recorded USD `payment_fees`. Any additional Dodo refund fee is absorbed by Bhavya. No estimated fee percentage. Missing/non-USD fee ledger entries leave the refund pending for reconciliation. Unfulfilled late/overlapping checkouts receive the full amount.
 - Refund amount is frozen before the API request; a stable idempotency key protects retries. Dodo refund webhooks set final success/failure. Failed provider refunds require operator reconciliation.
 - Dodo payment webhook retries process pending refund work. A scheduler/operator should additionally call `POST /api/admin/refunds` with `Authorization: Bearer REFUND_JOB_KEY`. Provision and schedule this before enabling checkout; it is not scheduled yet.
-- Auction and logo edits close December 10, 2026 at midnight India time. The owner at closing gets race-kit placement. The cutoff is a working production default selected to allow printing.
+- Bidding closes September 21, 2026 at 11:59 PM India time (`CLOSE_DATE`); payments confirmed after that are refunded in full. The owner at closing gets race-kit placement. Winners can upload or change logos until December 10, 2026 (`LOGO_LOCK_DATE`) for printing.
+- The site shows progress toward the goal (`FUNDING_GOAL`, every spot sold once = $2,090): raised is the sum of current sponsors' paid bids, with the bidding countdown and open spots (`app/GoalProgress.tsx`).
 
 ## Storage and security
 

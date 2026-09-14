@@ -134,7 +134,7 @@ function CountdownScene({days}: {days: number}) {
   return <AbsoluteFill style={{background: PAPER, alignItems: 'center', justifyContent: 'center', fontFamily: SANS, color: INK}}>
     <div style={{fontFamily: MONO, fontSize: portrait ? 320 : 300, fontWeight: 500, letterSpacing: -12, lineHeight: 1, fontVariantNumeric: 'tabular-nums'}}>{n}</div>
     <div style={{fontSize: portrait ? 60 : 56, fontWeight: 650, letterSpacing: -1.5, marginTop: 18}}>days to race day</div>
-    <div style={{fontSize: portrait ? 38 : 34, color: ACCENT, marginTop: 22, opacity: sub, transform: `translateY(${(1 - sub) * 12}px)`}}>Bidding closes 10 December</div>
+    <div style={{fontSize: portrait ? 38 : 34, color: ACCENT, marginTop: 22, opacity: sub, transform: `translateY(${(1 - sub) * 12}px)`}}>Bidding closes 21 September</div>
   </AbsoluteFill>;
 }
 
